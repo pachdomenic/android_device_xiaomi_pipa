@@ -333,6 +333,7 @@ PRODUCT_PACKAGES += \
     LineageSystemUIOverlayDevice \
     SettingsOverlayDevice \
     SettingsProviderOverlayDevice \
+    SettingsLibOverlayDevice \
     SystemUIOverlayDevice \
     WifiResDevice
 
