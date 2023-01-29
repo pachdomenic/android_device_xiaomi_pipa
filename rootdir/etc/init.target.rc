@@ -170,6 +170,9 @@ on boot
     chown cameraserver cameraserver /sys/class/thermal/thermal_message/flash_state
     write /sys/class/thermal/thermal_message/sconfig 9
 
+    # default country code
+    setprop ro.boot.wificountrycode 00
+
     write /sys/block/sda/queue/wbt_lat_usec 75000
 
     chown root system /sys/module/migt/parameters/add_lclus_affinity_uidlist
