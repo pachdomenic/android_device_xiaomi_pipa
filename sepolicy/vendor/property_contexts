@@ -1,1 +1,7 @@
+# Pen
 persist.vendor.parts.pen		u:object_r:vendor_pen_prop:s0
+
+# Display
+debug.sf.ignore_hwc_physical_display_orientation u:object_r:surfaceflinger_prop:s0 exact bool
+ro.bootanim.set_orientation_4630946808805831297 u:object_r:surfaceflinger_prop:s0 exact enum ORIENTATION_0 ORIENTATION_90 ORIENTATION_180 ORIENTATION_270
+ro.bootanim.set_orientation_4630946922172900481 u:object_r:surfaceflinger_prop:s0 exact enum ORIENTATION_0 ORIENTATION_90 ORIENTATION_180 ORIENTATION_270
