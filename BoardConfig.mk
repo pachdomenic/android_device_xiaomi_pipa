@@ -79,6 +79,9 @@ TARGET_FS_CONFIG_GEN := $(DEVICE_PATH)/config.fs
 # Firmware
 include vendor/xiaomi/pipa-firmware/BoardConfigVendor.mk
 
+# HWUI
+HWUI_COMPILE_FOR_PERF := true
+
 # Kernel
 BOARD_BOOT_HEADER_VERSION := 3
 BOARD_KERNEL_BASE := 0x00000000
