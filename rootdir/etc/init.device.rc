@@ -14,12 +14,6 @@ on boot
     # WiFi country code
     setprop ro.boot.wificountrycode US
 
-service xiaomi-pen /vendor/bin/xiaomi-pen ${persist.vendor.parts.pen}
-    class main
-    user system
-    group system input
-    oneshot
-    disabled
 
 service xiaomi-keyboard /vendor/bin/xiaomi-keyboard
     class main
@@ -27,6 +21,3 @@ service xiaomi-keyboard /vendor/bin/xiaomi-keyboard
     group system input
     oneshot
     disabled
-
-on property:persist.vendor.parts.pen=*
-    start xiaomi-pen
