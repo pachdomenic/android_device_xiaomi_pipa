@@ -59,6 +59,7 @@ public class PenUtils {
         logInfo("Enabling pen mode");
         try {
             SystemProperties.set("persist.vendor.parts.pen", "18");
+            mRefreshUtils.setPenRefreshRate();
         } catch (Exception e) {
             logError("Failed to enable pen mode: " + e.getMessage());
         }
@@ -71,6 +72,7 @@ public class PenUtils {
         logInfo("Disabling pen mode");
         try {
             SystemProperties.set("persist.vendor.parts.pen", "2");
+            mRefreshUtils.setDefaultRefreshRate();
         } catch (Exception e) {
             logError("Failed to disable pen mode: " + e.getMessage());
         }
