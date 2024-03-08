@@ -12,7 +12,7 @@ import android.os.Bundle;
 import android.os.SystemProperties;
 import android.preference.PreferenceManager;
 import androidx.preference.PreferenceFragment;
-import androidx.preference.SwitchPreference;
+import androidx.preference.SwitchPreferenceCompat;
 import com.android.settingslib.widget.FooterPreference;
 import com.android.settingslib.widget.MainSwitchPreference;
 import java.text.SimpleDateFormat;
@@ -48,8 +48,8 @@ public class StylusSettingsFragment extends PreferenceFragment implements
     stylusModePref.setChecked(
         mStylusPreference.getBoolean("stylus_mode_key", false));
 
-    SwitchPreference forceRecognizePref =
-        (SwitchPreference)findPreference("force_recognize_stylus_key");
+    SwitchPreferenceCompat forceRecognizePref =
+        (SwitchPreferenceCompat)findPreference("force_recognize_stylus_key");
     forceRecognizePref.setChecked(
         mStylusPreference.getBoolean("force_recognize_stylus_key", false));
   }

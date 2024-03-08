@@ -23,7 +23,7 @@
         android:title="@string/stylus_switch_title"
         android:defaultValue="false" />
 
-     <SwitchPreference
+     <SwitchPreferenceCompat
         android:key="force_recognize_stylus_key"
         android:title="@string/force_stylus_switch_title"
         android:summary="@string/force_stylus_switch_summary"
