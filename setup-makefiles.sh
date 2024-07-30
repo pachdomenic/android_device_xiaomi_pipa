@@ -26,3 +26,5 @@ export VENDOR=xiaomi
 export VENDOR_COMMON=${VENDOR}
 
 "./../../${VENDOR_COMMON}/${DEVICE_COMMON}/setup-makefiles.sh" "$@"
+
+append_firmware_calls_to_makefiles "${MY_DIR}/proprietary-firmware.txt"

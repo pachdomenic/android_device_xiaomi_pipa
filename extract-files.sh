@@ -53,3 +53,5 @@ export VENDOR=xiaomi
 export VENDOR_COMMON=${VENDOR}
 
 "./../../${VENDOR_COMMON}/${DEVICE_COMMON}/extract-files.sh" "$@"
+
+extract_firmware "${MY_DIR}/proprietary-firmware.txt" "${SRC}"
