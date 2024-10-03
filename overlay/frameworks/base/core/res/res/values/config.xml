@@ -782,4 +782,7 @@
          manager will disable alpha trasformation in animations where not
          strictly needed. -->
     <bool name="config_sf_limitedAlpha">true</bool>
+
+    <!-- Media controls -->
+    <bool name="config_mediaControlsTurbulenceByDefault">true</bool>
 </resources>
