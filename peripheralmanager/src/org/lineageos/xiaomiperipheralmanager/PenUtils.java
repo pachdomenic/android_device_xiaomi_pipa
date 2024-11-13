@@ -74,15 +74,15 @@ public class PenUtils {
     private static InputDeviceListener mInputDeviceListener = new InputDeviceListener() {
             @Override
             public void onInputDeviceAdded(int id) {
-                refreshPenMode();
+                //refreshPenMode();
             }
             @Override
             public void onInputDeviceRemoved(int id) {
-                refreshPenMode();
+                //refreshPenMode();
             }
             @Override
             public void onInputDeviceChanged(int id) {
-                refreshPenMode();
+                //refreshPenMode();
             }
         };
 }
