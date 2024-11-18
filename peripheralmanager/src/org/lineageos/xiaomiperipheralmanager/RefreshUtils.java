@@ -22,8 +22,8 @@ public final class RefreshUtils {
         boolean penMode = mSharedPrefs.getBoolean(KEY_PEN_MODE, false);
 
         if (!penMode) {
-            float maxRate = Settings.System.getFloat(mContext.getContentResolver(), KEY_PEAK_REFRESH_RATE, 144f);
-            float minRate = Settings.System.getFloat(mContext.getContentResolver(), KEY_MIN_REFRESH_RATE, 144f);
+            float maxRate = Settings.System.getFloat(mContext.getContentResolver(), PEAK_REFRESH_RATE, 144f);
+            float minRate = Settings.System.getFloat(mContext.getContentResolver(), MIN_REFRESH_RATE, 60f);
 
             // Update default values in SharedPreferences
             mSharedPrefs.edit()
@@ -44,7 +44,7 @@ public final class RefreshUtils {
 
     protected void setDefaultRefreshRate() {
         float defaultMinRate = mSharedPrefs.getFloat(KEY_MIN_REFRESH_RATE, 144f);
-        float defaultMaxRate = mSharedPrefs.getFloat(KEY_PEAK_REFRESH_RATE, 144f);
+        float defaultMaxRate = mSharedPrefs.getFloat(KEY_PEAK_REFRESH_RATE, 60f);
 
         mSharedPrefs.edit().putBoolean(KEY_PEN_MODE, false).apply();
 
