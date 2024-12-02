@@ -214,10 +214,21 @@ $(call soong_config_set,lineage_health,charging_control_supports_bypass,false)
 PRODUCT_PACKAGES += \
     media_codecs_c2.xml \
     media_codecs_performance_c2.xml \
+    media_codecs_kona.xml \
+    media_codecs_performance_kona.xml \
     video_system_specs.json
 
 # OMX
-TARGET_SUPPORTS_OMX_SERVICE := false
+PRODUCT_PACKAGES += \
+    libOmxAacEnc \
+    libOmxAmrEnc \
+    libOmxCore \
+    libOmxEvrcEnc \
+    libOmxG711Enc \
+    libOmxQcelp13Enc \
+    libOmxVdec \
+    libOmxVenc \
+    libstagefrighthw
 
 # Overlays
 DEVICE_PACKAGE_OVERLAYS += \
