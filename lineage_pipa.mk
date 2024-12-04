@@ -25,4 +25,4 @@ PRODUCT_CHARACTERISTICS := tablet
 PRODUCT_GMS_CLIENTID_BASE := android-xiaomi
 
 PRODUCT_BUILD_PROP_OVERRIDES += \
- BuildFingerprint=Xiaomi/pipa_global/pipa:13/TKQ1.221114.001/V14.0.8.0.TMZMIXM:user/release-keys
+ BuildFingerprint=Xiaomi/pipa_global/pipa:14/UKQ1.230917.001/V816.0.12.0.UMZMIXM:user/release-keys
