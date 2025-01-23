@@ -102,6 +102,7 @@ vendor/lib/hw/camera.qcom.so
 vendor/lib/hw/com.qti.chi.override.so
 vendor/lib/libAF.so
 vendor/lib/libXMFaceFocus.so
+vendor/lib/libSNPE.so
 vendor/lib/libcamera_nn_stub.so
 vendor/lib/libcamerapostproc.so
 vendor/lib/libcamlog.so
@@ -130,6 +131,8 @@ vendor/lib/libsynx.so
 vendor/lib/libthirdpartpkg.so
 vendor/lib/libthreadutils.so
 vendor/lib/libvideoutils.so
+vendor/lib/libc++_shared.so
+vendor/lib/vendor.qti.hardware.camera.postproc@1.0-service-impl.so
 vendor/lib64/camera/com.qti.actuator.pipa_cn3927_ov13b10.so
 vendor/lib64/camera/com.qti.eeprom.pipa_aac_hi846w_gt24p64e_front_eeprom.so
 vendor/lib64/camera/com.qti.eeprom.pipa_ofilm_ov13b10_bl24sa64_wide_eeprom.so
@@ -173,10 +176,10 @@ vendor/lib64/libAF.so
 vendor/lib64/libI420colorconvert.so
 vendor/lib64/libSNPE.so
 vendor/lib64/libXMFaceFocus.so
-vendor/lib64/libalAILDC.so
+vendor/lib64/libalAILDC.so;DISABLE_CHECKELF
 vendor/lib64/libalCFR.so
-vendor/lib64/libalLDC.so
-vendor/lib64/libalhLDC.so
+vendor/lib64/libalLDC.so;DISABLE_CHECKELF
+vendor/lib64/libalhLDC.so;DISABLE_CHECKELF
 vendor/lib64/libc++_shared.so
 vendor/lib64/libcamera_nn_stub.so
 vendor/lib64/libcamera_scene.so
@@ -197,10 +200,10 @@ vendor/lib64/libhdrdynamicootf.so
 vendor/lib64/libipebpsstriping.so
 vendor/lib64/libmiai_portraitsupernight.so
 vendor/lib64/libmialgo_ie_capture.so
-vendor/lib64/libmialgo_rfs.so
+vendor/lib64/libmialgo_rfs.so;DISABLE_CHECKELF
 vendor/lib64/libmialgo_sd.so
 vendor/lib64/libmialgo_utils.so
-vendor/lib64/libmialgoengine.so
+vendor/lib64/libmialgoengine.so;DISABLE_CHECKELF
 vendor/lib64/libxml2_vendor.so
 vendor/lib64/libmibokeh_855.so
 vendor/lib64/libmpbase.so
@@ -241,7 +244,8 @@ vendor/lib64/libarcsoft_mf_superresolution.so
 vendor/lib64/libarcsoft_portrait_lighting_c.so
 vendor/lib64/libarcsoft_portrait_lighting.so
 vendor/lib64/libarcsoft_qnnhtp.so
-vendor/lib64/libarcsoft_super_night_raw.so
+vendor/lib64/libarcsoft_super_night_raw.so;DISABLE_CHECKELF
+
 
 # Camera (camerax)
 vendor/lib/libcamxexternalformatutils.so

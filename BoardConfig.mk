@@ -9,8 +9,6 @@ include device/xiaomi/sm8250-common/BoardConfigCommon.mk
 
 DEVICE_PATH := device/xiaomi/pipa
 
-BUILD_BROKEN_DUP_RULES := true
-
 # Board Info
 TARGET_BOARD_INFO_FILE := $(DEVICE_PATH)/board-info.txt
 
