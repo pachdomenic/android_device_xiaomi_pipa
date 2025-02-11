@@ -1,4 +1,4 @@
-# Unpinned blobs from pipa_global-user 14 UKQ1.230917.001 OS1.0.14.0.UMZMIXM release-keys
+# Unpinned blobs from pipa_global-user 14 UKQ1.230917.001 OS1.0.15.0.UMZMIXM release-keys
 
 # ACDB
 vendor/etc/acdbdata/Forte/Forte_Bluetooth_cal.acdb:vendor/etc/acdbdata/Tutu/Tutu_Bluetooth_cal.acdb
@@ -49,8 +49,8 @@ vendor/lib/rfsa/adsp/misound_res_spk.bin
 vendor/lib/rfsa/adsp/misound_res_spk4ch.bin
 
 # Audio-Hardware
-vendor/lib/hw/audio.primary.kona.so
-vendor/lib/liba2dpoffload.so
+# vendor/lib/hw/audio.primary.kona.so
+# vendor/lib/liba2dpoffload.so
 vendor/lib/libaudio_log_utils.so
 vendor/lib/libaudiocloudctrl.so
 vendor/lib/libaudioroute_ext.so
@@ -106,9 +106,6 @@ vendor/lib/libSNPE.so
 vendor/lib/libcamera_nn_stub.so
 vendor/lib/libcamerapostproc.so
 vendor/lib/libcamlog.so
-vendor/lib/libcapiv2svacnn.so
-vendor/lib/libcapiv2svarnn.so
-vendor/lib/libcapiv2vop.so
 vendor/lib/libchilog.so
 vendor/lib/libcom.qti.chinodeutils.so
 vendor/lib/libcvp2.so
@@ -185,9 +182,6 @@ vendor/lib64/libcamera_nn_stub.so
 vendor/lib64/libcamera_scene.so
 vendor/lib64/libcamerapostproc.so
 vendor/lib64/libcamlog.so
-vendor/lib64/libcapiv2svacnn.so
-vendor/lib64/libcapiv2svarnn.so
-vendor/lib64/libcapiv2vop.so
 vendor/lib64/libchilog.so
 vendor/lib64/libcom.qti.chinodeutils.so
 vendor/lib64/libcvp2.so
