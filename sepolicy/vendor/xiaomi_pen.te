@@ -1,4 +1,0 @@
-# Allow XiaomiPeripheralManager to read/open /dev/input/event2
-allow system_app input_device:chr_file r_file_perms;
-allow system_app input_device:dir search;
-allow system_app input_device:file { open read write }
