@@ -167,6 +167,10 @@ ro.vendor.bluetooth.wipower=false
 vendor.hw.fm.init=0
 vendor.qcom.bluetooth.soc=hastings
 
+# HWUI
+debug.hwui.use_hint_manager=true
+debug.hwui.target_cpu_time_percent=30
+
 # Chipset
 ro.soc.manufacturer=QTI
 ro.soc.model=SM8250
