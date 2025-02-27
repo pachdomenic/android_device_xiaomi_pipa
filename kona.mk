@@ -250,6 +250,7 @@ PRODUCT_PACKAGES += \
     Xiaomi_Keyboard.idc
 
 # Kernel
+PRODUCT_ENABLE_UFFD_GC := true
 PRODUCT_SET_DEBUGFS_RESTRICTIONS := true
 
 # Lineage Health
