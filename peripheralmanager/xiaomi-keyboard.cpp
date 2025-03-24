@@ -1,3 +1,9 @@
+/*
+ * Copyright (C) 2023-2025 The LineageOS Project
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #include <android/log.h>
 #include <dirent.h>
 #include <errno.h>
@@ -15,10 +21,23 @@
 
 const char kPackageName[] = "xiaomi-keyboard";
 
-#define BUFFER_SIZE 256  // Instead of 1024
+/********************************************
+ * Configuration Constants
+ ********************************************/
+#define BUFFER_SIZE 256
+#define NANODEV_PATH "/dev/nanodev0"
+#define CONFIG_PATH "/data/local/tmp/xiaomi_keyboard.conf"
+#define DEBOUNCE_COUNT 3
+
+/********************************************
+ * Message Protocol Definitions
+ ********************************************/
+#define MSG_TYPE_SLEEP 37
+#define MSG_TYPE_WAKE 40
+#define MSG_HEADER_1 0x31
+#define MSG_HEADER_2 0x38
 
 // Device path
-#define NANODEV_PATH "/dev/nanodev0"
 // We'll find this dynamically
 char* EVENT_PATH = NULL;
 
@@ -56,9 +75,6 @@ bool kb_thread_paused = false;
 time_t last_monitor_activity = 0;
 pthread_t watchdog_thread;
 bool watchdog_enabled = true;
-
-// Add this near the top of the file, after the global variables
-#define CONFIG_PATH "/data/local/tmp/xiaomi_keyboard.conf"
 
 // Add a default config that can be used instead of parsing a file
 const bool DEFAULT_WATCHDOG_ENABLED = true;
@@ -169,7 +185,6 @@ void set_kb_state(bool value, bool force) {
 }
 
 // Improved keyboard status monitoring with debouncing
-#define DEBOUNCE_COUNT 3
 
 void *keyboard_monitor_thread(void *arg) {
     (void)arg;
@@ -252,10 +267,6 @@ void *watchdog_thread_func(void *arg) {
 }
 
 // Define message types for better readability
-#define MSG_TYPE_SLEEP 37
-#define MSG_TYPE_WAKE 40
-#define MSG_HEADER_1 0x31
-#define MSG_HEADER_2 0x38
 
 /**
  * Event handler for wake/sleep messages
@@ -363,6 +374,8 @@ void cleanup_resources(pthread_t monitor_thread, pthread_t watchdog_thread_id) {
     }
 }
 
+#define VERSION_STRING "1.0.0"
+
 /**
  * Main function
  */
@@ -373,7 +386,7 @@ int main() {
     char time_str[64];
     strftime(time_str, sizeof(time_str), "%Y-%m-%d %H:%M:%S", tm_info);
     
-    LOGI("Xiaomi keyboard service starting at %s", time_str);
+    LOGI("Xiaomi keyboard service v%s starting at %s", VERSION_STRING, time_str);
     
     // Load configuration
     load_configuration();
