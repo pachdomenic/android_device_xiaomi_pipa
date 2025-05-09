@@ -53,6 +53,16 @@ blob_fixups: blob_fixups_user_type = {
         .add_needed('libpiex_shim.so'),
     ('vendor/lib64/libwvhidl.so', 'vendor/lib64/mediadrm/libwvdrmengine.so'): blob_fixup()
         .add_needed('libcrypto_shim.so'),
+    (
+     'vendor/lib/libstagefright_soft_ac4dec.so',
+     'vendor/lib/libstagefright_soft_ddpdec.so',
+     'vendor/lib/libstagefrightdolby.so',
+     'vendor/lib64/libdlbdsservice.so',
+     'vendor/lib64/libstagefright_soft_ac4dec.so',
+     'vendor/lib64/libstagefright_soft_ddpdec.so',
+     'vendor/lib64/libstagefrightdolby.so'
+     ): blob_fixup()
+        .replace_needed('libstagefright_foundation.so', 'libstagefright_foundation-v33.so'),
     'vendor/lib64/vendor.qti.hardware.camera.postproc@1.0-service-impl.so': blob_fixup()
         .sig_replace('9A 0A 00 94', '1F 20 03 D5'),
     ('vendor/lib64/libalAILDC.so', 'vendor/lib64/libalLDC.so', 'vendor/lib64/libalhLDC.so'): blob_fixup()
