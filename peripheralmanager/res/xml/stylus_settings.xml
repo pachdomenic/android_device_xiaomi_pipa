@@ -18,10 +18,21 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:title="@string/stylus_title">
 
-    <SwitchPreference
-        android:key="stylus_switch_key"
-        android:defaultValue="false"
+     <com.android.settingslib.widget.MainSwitchPreference
+        android:key="stylus_mode_key"
         android:title="@string/stylus_switch_title"
-        android:summary="@string/stylus_switch_summary"/>
+        android:defaultValue="false" />
+
+     <SwitchPreference
+        android:key="force_recognize_stylus_key"
+        android:title="@string/force_stylus_switch_title"
+        android:summary="@string/force_stylus_switch_summary"
+        android:defaultValue="false"
+        android:dependency="stylus_mode_key" />
+
+      <com.android.settingslib.widget.FooterPreference
+        android:key="footer_key"
+        android:title="@string/stylus_more_info"
+        android:selectable="false" />
 
 </PreferenceScreen>

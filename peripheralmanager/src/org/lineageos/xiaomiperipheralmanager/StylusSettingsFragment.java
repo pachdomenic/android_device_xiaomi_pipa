@@ -10,16 +10,11 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.SystemProperties;
-import android.util.Log;
-
 import android.preference.PreferenceManager;
-import androidx.preference.ListPreference;
-import androidx.preference.Preference;
-import androidx.preference.Preference.OnPreferenceChangeListener;
 import androidx.preference.PreferenceFragment;
 import androidx.preference.SwitchPreference;
+import com.android.settingslib.widget.FooterPreference;
 import com.android.settingslib.widget.MainSwitchPreference;
-
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
@@ -33,30 +28,31 @@ public class StylusSettingsFragment extends PreferenceFragment implements
 
     private static final String TAG = "XiaomiPenSettings";
     private static boolean DEBUG = SystemProperties.getBoolean("persist.xiaomi.pen.debug", false);
-    private static final String STYLUS_KEY = "stylus_switch_key";
+    private static final String STYLUS_KEY = "stylus_mode_key";
+    private static final String FORCE_RECOGNIZE_STYLUS_KEY = "force_recognize_stylus_key";
 
     private SharedPreferences mStylusPreference;
+    private RefreshUtils mRefreshUtils;
 
     @Override
     public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
         try {
             addPreferencesFromResource(R.xml.stylus_settings);
 
-            mStylusPreference = PreferenceManager.getDefaultSharedPreferences(getContext());
-            SwitchPreference switchPreference = (SwitchPreference) findPreference(STYLUS_KEY);
+    Context context = getContext();
+    mStylusPreference = PreferenceManager.getDefaultSharedPreferences(context);
+    mRefreshUtils = new RefreshUtils(context);
 
-            if (switchPreference != null) {
-                switchPreference.setChecked(mStylusPreference.getBoolean(STYLUS_KEY, false));
-                switchPreference.setEnabled(true);
-            } else {
-                logError("Could not find stylus switch preference");
-            }
-            
-            logInfo("Stylus settings fragment created");
-        } catch (Exception e) {
-            logError("Error creating stylus settings: " + e.getMessage());
-        }
-    }
+    MainSwitchPreference stylusModePref =
+        (MainSwitchPreference)findPreference("stylus_mode_key");
+    stylusModePref.setChecked(
+        mStylusPreference.getBoolean("stylus_mode_key", false));
+
+    SwitchPreference forceRecognizePref =
+        (SwitchPreference)findPreference("force_recognize_stylus_key");
+    forceRecognizePref.setChecked(
+        mStylusPreference.getBoolean("force_recognize_stylus_key", false));
+  }
 
     @Override
     public void onResume() {
@@ -81,32 +77,27 @@ public class StylusSettingsFragment extends PreferenceFragment implements
     }
 
     @Override
-    public void onSharedPreferenceChanged(SharedPreferences sharedPreference, String key) {
-        if (STYLUS_KEY.equals(key)) {
-            try {
-                boolean newStatus = mStylusPreference.getBoolean(key, false);
-                logInfo("Stylus preference changed to: " + newStatus);
-                forceStylus(newStatus);
-            } catch (Exception e) {
-                logError("Error handling preference change: " + e.getMessage());
-            }
+    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
+                                          String key) {
+        if (STYLUS_MODE_KEY.equals(key)) {
+          setStylusMode(sharedPreferences.getBoolean(key, false));
+        } else if (FORCE_RECOGNIZE_STYLUS_KEY.equals(key)) {
+          setForceRecognizeStylus(sharedPreferences.getBoolean(key, false));
         }
     }
 
-    private void forceStylus(boolean status) {
-        try {
-            mStylusPreference.edit().putBoolean(STYLUS_KEY, status).apply();
-            logInfo("Setting stylus mode: " + (status ? "enabled" : "disabled"));
-            
-            if (status) {
-                PenUtils.enablePenMode();
-            } else {
-                PenUtils.disablePenMode();
-            }
-        } catch (Exception e) {
-            logError("Error setting stylus mode: " + e.getMessage());
-        }
+    private void setStylusMode(boolean enabled) {
+      if (enabled)
+        mRefreshUtils.setPenRefreshRate();
+      else
+        mRefreshUtils.setDefaultRefreshRate();
     }
+
+    private void setForceRecognizeStylus(boolean enabled) {
+      if (enabled)
+        PenUtils.enablePenMode();
+      else
+        PenUtils.disablePenMode();
     
     // Enhanced logging helpers to match other classes
     private void logDebug(String message) {

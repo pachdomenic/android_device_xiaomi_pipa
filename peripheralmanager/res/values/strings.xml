@@ -11,7 +11,8 @@
     <!-- Xiaomi Stylus -->
     <string name="stylus_title">Stylus</string>
     <string name="stylus_summary">Stylus Settings</string>
-    <string name="stylus_switch_title">Force recognize stylus</string>
-    <string name="stylus_switch_summary">Enable this settings to allow using third party styluses</string>
-
+    <string name="stylus_switch_title">Stylus Mode</string>
+    <string name="force_stylus_switch_title">Force recognize stylus</string>
+    <string name="force_stylus_switch_summary">Enable this settings to allow using third party styluses</string>
+    <string name="stylus_more_info">Stylus Mode limits display\'s max refresh rate to 120Hz</string>
 </resources>
