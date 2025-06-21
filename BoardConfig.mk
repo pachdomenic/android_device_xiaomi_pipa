@@ -125,6 +125,7 @@ TARGET_SYSTEM_PROP += $(DEVICE_PATH)/system.prop
 TARGET_VENDOR_PROP += $(DEVICE_PATH)/vendor.prop
 
 # Recovery
+$(call soong_config_set_bool,recovery,target_recovery_uses_qti_drm,true)
 TARGET_RECOVERY_DEFAULT_ROTATION := ROTATION_RIGHT
 TARGET_RECOVERY_DEFAULT_TOUCH_ROTATION := ROTATION_RIGHT
 TARGET_RECOVERY_FSTAB := $(DEVICE_PATH)/rootdir/etc/fstab.qcom
