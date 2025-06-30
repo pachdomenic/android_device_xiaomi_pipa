@@ -15,4 +15,11 @@
     <string name="force_stylus_switch_title">Force recognize stylus</string>
     <string name="force_stylus_switch_summary">Enable this settings to allow using third party styluses</string>
     <string name="stylus_more_info">Stylus Mode limits display\'s max refresh rate to 120Hz</string>
+
+    <!-- Smart Cover -->
+    <string name="lid_title">Smart Cover</string>
+    <string name="lid_summary">Smart Cover Settings</string>
+    <string name="lid_switch_title">Toggle Smart Cover behaivor</string>
+    <string name="lid_switch_summary">This toggles the behaivor of the smart lid</string>
+
 </resources>
