@@ -29,9 +29,6 @@ ro.netflix.bsp_rev=Q8250-19134-1
 ro.vendor.qti.core_ctl_max_cpu=4
 ro.vendor.qti.core_ctl_min_cpu=2
 
-# WFD
-vendor.wfdservice64=enable
-
 # Logs
 persist.log.tag.AnalyticsService=S
 persist.log.tag.KernelCpuUidActiveTimeReader=S
