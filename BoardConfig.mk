@@ -76,6 +76,9 @@ TARGET_SCREEN_DENSITY := 400
 # Filesystem
 TARGET_FS_CONFIG_GEN := $(DEVICE_PATH)/config.fs
 
+# Firmware
+include vendor/xiaomi/pipa-firmware/BoardConfigVendor.mk
+
 # Kernel
 BOARD_BOOT_HEADER_VERSION := 3
 BOARD_KERNEL_BASE := 0x00000000
