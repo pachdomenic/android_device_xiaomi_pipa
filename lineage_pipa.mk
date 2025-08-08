@@ -14,6 +14,9 @@ $(call inherit-product, vendor/lineage/config/common_full_tablet_wifionly.mk)
 # EPPE
 TARGET_DISABLE_EPPE := true
 
+# Bypass Charging
+BYPASS_CHARGE_SUPPORTED := true
+
 # Inherit from pipa device
 $(call inherit-product, device/xiaomi/pipa/kona.mk)
 
