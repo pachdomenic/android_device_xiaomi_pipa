@@ -34,10 +34,10 @@ TARGET_SUPPORTS_QUICK_TAP := false
 
 PRODUCT_GMS_CLIENTID_BASE := android-xiaomi
 
-PRODUCT_SYSTEM_NAME := pipa_global
+PRODUCT_SYSTEM_NAME := pipa_cn
 PRODUCT_SYSTEM_DEVICE := pipa
 
 PRODUCT_BUILD_PROP_OVERRIDES += \
-    BuildFingerprint=Xiaomi/pipa_global/pipa:14/UKQ1.240624.001/OS2.0.4.0.UMZMIXM:user/release-keys \
+    BuildFingerprint=Xiaomi/pipa_pad_cn/pipa:14/UKQ1.240624.001/OS2.0.11.0.UMZCNXM:user/release-keys \
     DeviceName=$(PRODUCT_SYSTEM_DEVICE) \
     DeviceProduct=$(PRODUCT_SYSTEM_NAME)
