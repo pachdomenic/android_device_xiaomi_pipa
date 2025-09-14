@@ -26,7 +26,7 @@ public class PenUtils {
 
     private static InputManager mInputManager;
 
-    private static final String STYLUS_KEY = "stylus_switch_key";
+    private static final String STYLUS_KEY = "force_recognize_stylus_key";
 
     private static SharedPreferences preferences;
     private static RefreshUtils mRefreshUtils;
