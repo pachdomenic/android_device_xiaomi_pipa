@@ -588,30 +588,6 @@ vendor/lib/libqcodec2_platform.so
 vendor/lib/libqcodec2_utils.so
 vendor/lib/libqcodec2_v4l2codec.so
 
-# Media (Dolby Music)
-vendor/etc/dolby/dax-default.xml
-
-# Media (Dolby Music) - miui_SPARKGlobal_OS1.0.6.0.UHYMIXM
-vendor/bin/hw/vendor.dolby.hardware.dms@2.0-service|5a644ed81b426617a63503a2a07d9d8ab099bbfc|a7ec83e8823315db130720f101dc469dd5434d77
-vendor/etc/init/vendor.dolby.hardware.dms@2.0-service.rc|29296ebfe89b2697fec573be73cc3757fd97bed6
-vendor/etc/vintf/manifest/vendor.dolby.hardware.dms.xml|c8095f649de19b80271fb429b4b6b439297a0678
-vendor/lib/soundfx/libdlbvol.so|2098df6e8e7b872d3154a48cfb2fadbf145a8b72
-vendor/lib/soundfx/libswdap.so|c4ca16f05f2550ffcda2253f25830b39dc5a964d|10555cc13d23266cf84fb371f14bd932771c4b44
-vendor/lib/soundfx/libswgamedap.so|00b65746072d9d7fbfca430d6f69dcca6be9976c|49d86a8cee0aa34ee3d124aaa63d06666eb968fd
-vendor/lib/soundfx/libswvqe.so|1f37bbd730def46368922a31f280482f93900a3d|b57bc6b2284687437ae56316f97a7f8fdd4c51a0
-vendor/lib/libdapparamstorage.so|bcd6ba7aa77c61e80e2ee905cc34a33dba4296e0
-vendor/lib/libdlbpreg.so|c846daf38e7f9c3567c88bb212d2d4d26f27ad8b
-vendor/lib/vendor.dolby.hardware.dms@2.0.so|1a837be7a1cff2d836a996f7333f040c1d95f5d2
-vendor/lib64/soundfx/libdlbvol.so|ca9049788deb930b191e15b85b6652847593e0f6
-vendor/lib64/soundfx/libswdap.so|dd564151649218412f256c90b741965e418532ea|05191927fee3f15456a096fb2a5509f1ee1b11b9
-vendor/lib64/soundfx/libswgamedap.so|c9f24a2b7ad79c47073a36bf4657076fc8f401d1|f945304fdce6a7d43f380068fb8e4f60df61404e
-vendor/lib64/soundfx/libswvqe.so|2b079fa252c5f20d347b4500c2ca022d905bd1f9|de1de7150fe51580cd0cea9e10a72b565a306978
-vendor/lib64/libdapparamstorage.so|81f02d0807429134e71b3a2645cbad52af8ae342
-vendor/lib64/libdlbdsservice.so|e06176eff9cb4b22b24efa5b82e71063f32a986b
-vendor/lib64/libdlbpreg.so|c3e7a3e3fd6cda7c09a47403fcabb78d2907fb0e
-vendor/lib64/vendor.dolby.hardware.dms@2.0-impl.so|f2645a687e83ae39f9b6b48761c4701f13a71eaf
-vendor/lib64/vendor.dolby.hardware.dms@2.0.so|2e8e6528c59c46a5a43cb9e6edbb8ece2ab7c5fd
-
 # Media configs
 vendor/etc/media_profiles_kona.xml:vendor/etc/media_profiles_V1_0.xml
 

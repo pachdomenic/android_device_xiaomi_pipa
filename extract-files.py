@@ -54,19 +54,12 @@ blob_fixups: blob_fixups_user_type = {
         .add_needed('libbinder_shim.so'),
     'system_ext/lib64/libwfdservice.so': blob_fixup()
         .replace_needed('android.media.audio.common.types-V2-cpp.so', 'android.media.audio.common.types-V4-cpp.so'),
-    'vendor/bin/hw/vendor.dolby.hardware.dms@2.0-service': blob_fixup()
-        .add_needed('libstagefright_foundation-v33.so'),
-    'vendor/etc/dolby/dax-default.xml': blob_fixup()
-        .regex_replace('volume-leveler-enable value="true"', 'volume-leveler-enable value="false"'),
     'vendor/etc/init/init.batterysecret.rc': blob_fixup()
         .regex_replace(r'\s+seclabel u:r:batterysecret:s0', ''),
     'vendor/etc/init/init.mi_thermald.rc': blob_fixup()
         .regex_replace(r'\s+seclabel u:r:mi_thermald:s0', ''),
     'vendor/lib64/camera/components/com.mi.node.watermark.so': blob_fixup()
         .add_needed('libpiex_shim.so'),
-    ('vendor/lib64/soundfx/libswvqe.so', 'vendor/lib64/soundfx/libswgamedap.so', 'vendor/lib64/soundfx/libswdap.so',
-    'vendor/lib/soundfx/libswvqe.so', 'vendor/lib/soundfx/libswgamedap.so', 'vendor/lib/soundfx/libswdap.so'): blob_fixup()
-        .replace_needed('audio.primary.mediatek.so', 'audio.primary.pipa.so\x00\x00\x00\x00'),
     ('vendor/lib64/libwvhidl.so', 'vendor/lib64/mediadrm/libwvdrmengine.so'): blob_fixup()
         .add_needed('libcrypto_shim.so'),
     'vendor/lib/hw/audio.primary.pipa.so': blob_fixup()
