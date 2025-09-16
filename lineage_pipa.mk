@@ -11,6 +11,9 @@ $(call inherit-product, $(SRC_TARGET_DIR)/product/full_base.mk)
 # Inherit some common lineage stuff.
 $(call inherit-product, vendor/lineage/config/common_full_tablet_wifionly.mk)
 
+# Blur UI
+TARGET_ENABLE_BLUR := true
+
 # EPPE
 TARGET_DISABLE_EPPE := true
 
