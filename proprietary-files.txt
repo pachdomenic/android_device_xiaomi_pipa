@@ -60,9 +60,9 @@ vendor/lib/rfsa/adsp/misound_res_spk.bin
 vendor/lib/rfsa/adsp/misound_res_spk4ch.bin
 
 # Audio
-vendor/lib/hw/audio.primary.kona.so:vendor/lib/hw/audio.primary.pipa.so
+vendor/lib/hw/audio.primary.kona.so
 vendor/lib/vndk/libxlog.so
-vendor/lib/liba2dpoffload.so:vendor/lib/liba2dpoffload_pipa.so
+vendor/lib/liba2dpoffload.so
 vendor/lib/libacdb-fts.so
 vendor/lib/libacdbloader.so
 vendor/lib/libacdbrtac.so
