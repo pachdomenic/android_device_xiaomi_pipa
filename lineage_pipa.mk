@@ -14,9 +14,6 @@ $(call inherit-product, vendor/lineage/config/common_full_tablet_wifionly.mk)
 # Blur UI
 TARGET_ENABLE_BLUR := true
 
-# EPPE
-TARGET_DISABLE_EPPE := true
-
 # Bypass Charging
 BYPASS_CHARGE_SUPPORTED := true
 
