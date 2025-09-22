@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2023 The LineageOS Project
+ * Copyright (C) 2025 SheoranPranshu
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,78 +10,232 @@ package org.lineageos.xiaomiperipheralmanager;
 import android.content.Context;
 import android.hardware.input.InputManager;
 import android.hardware.input.InputManager.InputDeviceListener;
+import android.os.Handler;
+import android.os.Looper;
 import android.os.SystemProperties;
+import android.preference.PreferenceManager;
+import android.content.SharedPreferences;
 import android.util.Log;
 import android.view.InputDevice;
 
-import android.preference.PreferenceManager;
-import android.content.SharedPreferences;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 
 public class PenUtils {
 
-    private static final String TAG = "XiaomiPeripheralManagerPenUtils";
-    private static final boolean DEBUG = false;
+    private static final String TAG = "XiaomiPenUtils";
+    private static final boolean DEBUG = true;
 
+    // Xiaomi pen hardware identifiers
     private static final int penVendorId = 6421;
     private static final int penProductId = 19841;
+    
+    // Preference keys
+    private static final String STYLUS_MODE_KEY = "stylus_mode_key";
+    private static final String FORCE_STYLUS_KEY = "force_recognize_stylus_key";
 
     private static InputManager mInputManager;
-
-    private static final String STYLUS_KEY = "force_recognize_stylus_key";
-
-    private static SharedPreferences preferences;
+    private static SharedPreferences mPreferences;
     private static RefreshUtils mRefreshUtils;
+    private static Handler mHandler;
+    
+    // State tracking
+    private static boolean mPenModeEnabled = false;
+    private static boolean mIsPenConnected = false;
+    private static Context mContext;
 
+    // Set up device listeners.
     public static void setup(Context context) {
+        mContext = context;
         mInputManager = (InputManager) context.getSystemService(Context.INPUT_SERVICE);
-        mInputManager.registerInputDeviceListener(mInputDeviceListener, null);
-        preferences = PreferenceManager.getDefaultSharedPreferences(context);
+        mPreferences = PreferenceManager.getDefaultSharedPreferences(context);
         mRefreshUtils = new RefreshUtils(context);
+        mHandler = new Handler(Looper.getMainLooper());
+        
+        // Register listener for pen connection/disconnection events
+        mInputManager.registerInputDeviceListener(mInputDeviceListener, mHandler);
+        
+        // Log current settings state
+        boolean stylusModeEnabled = mPreferences.getBoolean(STYLUS_MODE_KEY, false);
+        boolean forceRecognize = mPreferences.getBoolean(FORCE_STYLUS_KEY, false);
+        
+        logInfo("Setup complete - Stylus mode: " + stylusModeEnabled + ", Force recognize: " + forceRecognize);
+        
+        // Initial pen mode check
         refreshPenMode();
     }
 
     public static void enablePenMode() {
-        Log.d(TAG, "enablePenMode: Enable Pen Mode");
+        if (mPenModeEnabled) {
+            logDebug("Pen mode already enabled");
+            return;
+        }
+        
+        logInfo("Enabling pen mode");
+        mPenModeEnabled = true;
+        
+        // Set system property for kernel/HAL
         SystemProperties.set("persist.vendor.parts.pen", "18");
-        Log.d(TAG, "enablePenMode: Setting Refresh Rates for Pen");
+        
+        // Apply refresh rate constraints if stylus mode is enabled
+        // Force Stylus only bypasses pen detection, doesn't enforce refresh rates
+        boolean stylusModeEnabled = mPreferences.getBoolean(STYLUS_MODE_KEY, false);
+        if (mRefreshUtils != null && stylusModeEnabled) {
+            mRefreshUtils.setPenRefreshRate();
+            logInfo("Applied pen refresh rate constraints (60-120Hz)");
+        } else {
+            logInfo("Pen hardware enabled without refresh rate constraints");
+        }
     }
 
     public static void disablePenMode() {
-        Log.d(TAG, "disablePenMode: Disable Pen Mode");
+        if (!mPenModeEnabled) {
+            logDebug("Pen mode already disabled");
+            return;
+        }
+        
+        logInfo("Disabling pen mode");
+        mPenModeEnabled = false;
+        
+        // Clear system property
         SystemProperties.set("persist.vendor.parts.pen", "2");
-        Log.d(TAG, "disablePenMode: Resetting Refresh Rate Values");
+        
+        // Restore default refresh rates only if they were being enforced
+        boolean stylusModeEnabled = mPreferences.getBoolean(STYLUS_MODE_KEY, false);
+        if (mRefreshUtils != null && stylusModeEnabled) {
+            mRefreshUtils.setDefaultRefreshRate();
+            logInfo("Restored default refresh rates");
+        }
     }
 
     private static void refreshPenMode() {
+        boolean forceRecognize = mPreferences.getBoolean(FORCE_STYLUS_KEY, false);
+        boolean stylusModeEnabled = mPreferences.getBoolean(STYLUS_MODE_KEY, false);
+        boolean penDetected = false;
+        
+        // Check if Xiaomi pen is physically connected
         for (int id : mInputManager.getInputDeviceIds()) {
-            if (isDeviceXiaomiPen(id) || preferences.getBoolean(STYLUS_KEY, false)) {
-                if (DEBUG) Log.d(TAG, "refreshPenMode: Found Xiaomi Pen");
-                enablePenMode();
-                return;
+            if (isDeviceXiaomiPen(id)) {
+                penDetected = true;
+                logDebug("Xiaomi pen detected (device ID: " + id + ")");
+                break;
             }
         }
-        if (DEBUG) Log.d(TAG, "refreshPenMode: No Xiaomi Pen found");
-        disablePenMode();
+        
+        mIsPenConnected = penDetected;
+        
+        // Enable pen mode if:
+        // 1. Stylus mode is enabled AND (pen is detected OR force recognize is on)
+        // 2. OR force recognize is enabled (backward compatibility)
+        boolean shouldEnablePen = (stylusModeEnabled && (penDetected || forceRecognize)) || forceRecognize;
+        
+        if (shouldEnablePen) {
+            logInfo("Pen mode should be enabled - Detected: " + penDetected + 
+                   ", Stylus mode: " + stylusModeEnabled + ", Force: " + forceRecognize);
+            enablePenMode();
+        } else {
+            logInfo("Pen mode should be disabled - Detected: " + penDetected + 
+                   ", Stylus mode: " + stylusModeEnabled);
+            disablePenMode();
+        }
     }
 
+    // Checks if an input device is the Xiaomi pen based on vendor and product IDs.
     private static boolean isDeviceXiaomiPen(int id) {
-        InputDevice inputDevice = mInputManager.getInputDevice(id);
-        return inputDevice.getVendorId() == penVendorId &&
-                inputDevice.getProductId() == penProductId;
+        try {
+            InputDevice inputDevice = mInputManager.getInputDevice(id);
+            if (inputDevice == null) return false;
+            
+            boolean isPen = inputDevice.getVendorId() == penVendorId &&
+                          inputDevice.getProductId() == penProductId;
+            
+            if (isPen) {
+                logDebug("Found Xiaomi pen: " + inputDevice.getName());
+            }
+            
+            return isPen;
+        } catch (Exception e) {
+            logError("Error checking device: " + e.getMessage());
+            return false;
+        }
     }
 
+    // InputDeviceListener to handle pen connection/disconnection events.
     private static InputDeviceListener mInputDeviceListener = new InputDeviceListener() {
-            @Override
-            public void onInputDeviceAdded(int id) {
-                refreshPenMode();
+        @Override
+        public void onInputDeviceAdded(int id) {
+            logDebug("Input device added: " + id);
+            // Check if it's the Xiaomi pen
+            if (isDeviceXiaomiPen(id)) {
+                logInfo("Xiaomi pen connected");
+                // Delay to ensure device is fully initialized
+                mHandler.postDelayed(() -> refreshPenMode(), 100);
             }
-            @Override
-            public void onInputDeviceRemoved(int id) {
-                refreshPenMode();
+        }
+        
+        @Override
+        public void onInputDeviceRemoved(int id) {
+            logDebug("Input device removed: " + id);
+            // Device is already removed, so check all remaining devices
+            mHandler.postDelayed(() -> refreshPenMode(), 100);
+        }
+        
+        @Override
+        public void onInputDeviceChanged(int id) {
+            logDebug("Input device changed: " + id);
+            if (isDeviceXiaomiPen(id)) {
+                logInfo("Xiaomi pen changed");
+                mHandler.postDelayed(() -> refreshPenMode(), 100);
             }
-            @Override
-            public void onInputDeviceChanged(int id) {
-                refreshPenMode();
-            }
-        };
+        }
+    };
+
+    public static void onStylusModeChanged(boolean enabled) {
+        logInfo("Stylus mode setting changed to: " + enabled);
+        refreshPenMode();
+    }
+
+    public static void onForceRecognizeChanged(boolean enabled) {
+        logInfo("Force recognize setting changed to: " + enabled);
+        refreshPenMode();
+    }
+
+    // Physical pen connected?
+    public static boolean isPenConnected() {
+        return mIsPenConnected;
+    }
+
+    // Pen mode enabled?
+    public static boolean isPenModeEnabled() {
+        return mPenModeEnabled;
+    }
+
+    // Cleanup method to unregister listeners.
+    public static void cleanup() {
+        if (mInputManager != null && mInputDeviceListener != null) {
+            mInputManager.unregisterInputDeviceListener(mInputDeviceListener);
+            logInfo("Input device listener unregistered");
+        }
+        if (mRefreshUtils != null) {
+            mRefreshUtils.cleanup();
+        }
+    }
+
+    // Logging helpers with timestamps
+    private static void logDebug(String message) {
+        if (DEBUG) Log.d(TAG, getTimestamp() + message);
+    }
+    
+    private static void logInfo(String message) {
+        Log.i(TAG, getTimestamp() + message);
+    }
+    
+    private static void logError(String message) {
+        Log.e(TAG, getTimestamp() + message);
+    }
+    
+    private static String getTimestamp() {
+        return "[" + new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US).format(new Date()) + "] ";
+    }
 }
