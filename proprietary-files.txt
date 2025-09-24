@@ -823,11 +823,11 @@ vendor/lib64/vendor.qti.hardware.soter@1.0.so
 vendor/bin/ssr_setup
 
 # Thermal
-vendor/bin/mi_thermald
+vendor/bin/mi_thermald|63b3a4dd3b1ae02d7f907bae87c358dbefe8866f
 vendor/etc/init/init.mi_thermald.rc
 
 # Thermal engine
-vendor/bin/thermal-engine
+vendor/bin/thermal-engine|f0d8db5cc6870a1db91897307cb42e5b2e0b8d0c
 vendor/etc/init/init_thermal-engine.rc
 vendor/lib/libthermalclient.so
 vendor/lib64/libthermalclient.so
