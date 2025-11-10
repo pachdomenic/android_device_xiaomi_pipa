@@ -34,6 +34,7 @@ public class PenUtils {
     // Preference keys
     private static final String STYLUS_MODE_KEY = "stylus_mode_key";
     private static final String FORCE_STYLUS_KEY = "force_recognize_stylus_key";
+    private static final String STYLUS_REFRESH_RATE_KEY = "stylus_refresh_rate_key";
 
     private static InputManager mInputManager;
     private static SharedPreferences mPreferences;
@@ -44,6 +45,7 @@ public class PenUtils {
     private static boolean mPenModeEnabled = false;
     private static boolean mIsPenConnected = false;
     private static Context mContext;
+    private static String mCurrentRefreshMode = "dynamic";
 
     // Set up device listeners.
     public static void setup(Context context) {
@@ -56,11 +58,16 @@ public class PenUtils {
         // Register listener for pen connection/disconnection events
         mInputManager.registerInputDeviceListener(mInputDeviceListener, mHandler);
         
+        // Load saved refresh rate preference
+        mCurrentRefreshMode = mPreferences.getString(STYLUS_REFRESH_RATE_KEY, "dynamic");
+        
         // Log current settings state
         boolean stylusModeEnabled = mPreferences.getBoolean(STYLUS_MODE_KEY, false);
         boolean forceRecognize = mPreferences.getBoolean(FORCE_STYLUS_KEY, false);
         
-        logInfo("Setup complete - Stylus mode: " + stylusModeEnabled + ", Force recognize: " + forceRecognize);
+        logInfo("Setup complete - Stylus mode: " + stylusModeEnabled + 
+                ", Force recognize: " + forceRecognize + 
+                ", Refresh mode: " + mCurrentRefreshMode);
         
         // Initial pen mode check
         refreshPenMode();
@@ -79,11 +86,10 @@ public class PenUtils {
         SystemProperties.set("persist.vendor.parts.pen", "18");
         
         // Apply refresh rate constraints if stylus mode is enabled
-        // Force Stylus only bypasses pen detection, doesn't enforce refresh rates
         boolean stylusModeEnabled = mPreferences.getBoolean(STYLUS_MODE_KEY, false);
         if (mRefreshUtils != null && stylusModeEnabled) {
-            mRefreshUtils.setPenRefreshRate();
-            logInfo("Applied pen refresh rate constraints (60-120Hz)");
+            applyRefreshRateMode(mCurrentRefreshMode);
+            logInfo("Applied pen mode with refresh rate: " + mCurrentRefreshMode);
         } else {
             logInfo("Pen hardware enabled without refresh rate constraints");
         }
@@ -138,6 +144,42 @@ public class PenUtils {
             logInfo("Pen mode should be disabled - Detected: " + penDetected + 
                    ", Stylus mode: " + stylusModeEnabled);
             disablePenMode();
+        }
+    }
+
+     // Apply the selected refresh rate mode
+    private static void applyRefreshRateMode(String mode) {
+        if (mRefreshUtils == null) {
+            logError("RefreshUtils not initialized");
+            return;
+        }
+
+        mCurrentRefreshMode = mode;
+        
+        switch (mode) {
+            case "60":
+                mRefreshUtils.setFixedRefreshRate(60f);
+                logInfo("Applied fixed 60Hz refresh rate");
+                break;
+            case "120":
+                mRefreshUtils.setFixedRefreshRate(120f);
+                logInfo("Applied fixed 120Hz refresh rate");
+                break;
+            case "dynamic":
+            default:
+                mRefreshUtils.setPenRefreshRate();
+                logInfo("Applied dynamic 60-120Hz refresh rate");
+                break;
+        }
+    }
+
+    public static void setRefreshRateMode(String mode) {
+        logInfo("Refresh rate mode changed to: " + mode);
+        mCurrentRefreshMode = mode;
+        
+        // Only apply if pen mode is currently active
+        if (mPenModeEnabled && mRefreshUtils != null) {
+            applyRefreshRateMode(mode);
         }
     }
 
@@ -209,6 +251,11 @@ public class PenUtils {
     // Pen mode enabled?
     public static boolean isPenModeEnabled() {
         return mPenModeEnabled;
+    }
+
+    // Get current refresh rate mode
+    public static String getCurrentRefreshMode() {
+        return mCurrentRefreshMode;
     }
 
     // Cleanup method to unregister listeners.

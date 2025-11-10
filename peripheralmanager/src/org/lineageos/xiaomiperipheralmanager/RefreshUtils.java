@@ -44,6 +44,8 @@ public final class RefreshUtils {
     private volatile boolean mPenModeActive = false;
     private volatile boolean mIsEnforcingRate = false;
     private volatile boolean mListenerRegistered = false;
+    private volatile float mTargetMinRate = PEN_MIN_RATE;
+    private volatile float mTargetMaxRate = PEN_MAX_RATE;
 
     protected RefreshUtils(Context context) {
         mContext = context;
@@ -55,7 +57,7 @@ public final class RefreshUtils {
         logInfo("RefreshUtils initialized");
     }
 
-     // Creates the display listener but registers when pen mode is enabled
+    // Creates the display listener but registers when pen mode is enabled
     private void createDisplayListener() {
         mDisplayListener = new DisplayManager.DisplayListener() {
             @Override
@@ -79,7 +81,7 @@ public final class RefreshUtils {
         };
     }
 
-     // Register the display listener to start monitoring refresh rate changes.
+    // Register the display listener to start monitoring refresh rate changes.
     private void registerDisplayListener() {
         if (!mListenerRegistered && mDisplayManager != null && mDisplayListener != null) {
             mDisplayManager.registerDisplayListener(mDisplayListener, mHandler);
@@ -88,7 +90,7 @@ public final class RefreshUtils {
         }
     }
 
-     // Unregister the display listener to stop monitoring upon disabling pen mode.
+    // Unregister the display listener to stop monitoring upon disabling pen mode.
     private void unregisterDisplayListener() {
         if (mListenerRegistered && mDisplayManager != null && mDisplayListener != null) {
             mDisplayManager.unregisterDisplayListener(mDisplayListener);
@@ -113,16 +115,17 @@ public final class RefreshUtils {
             float currentRate = display.getRefreshRate();
             logDebug("Current refresh rate: " + currentRate + "Hz");
 
-            // Check if current rate is incompatible with pen (30Hz, 48Hz, 50Hz, etc.)
-            if (!isRateCompatibleWithPen(currentRate)) {
-                logInfo("Detected incompatible refresh rate: " + currentRate + "Hz - enforcing pen rate");
+            // Check if current rate is outside our target range
+            if (!isRateInTargetRange(currentRate)) {
+                logInfo("Detected rate outside target range: " + currentRate + 
+                       "Hz - enforcing " + mTargetMinRate + "-" + mTargetMaxRate + "Hz");
                 
                 // Set flag to prevent recursive calls
                 mIsEnforcingRate = true;
                 
-                // Select and apply the appropriate pen-compatible rate
-                float targetRate = selectBestPenRate(currentRate);
-                forceRefreshRate(targetRate);
+                // Select and apply the appropriate rate
+                float targetRate = selectBestRate(currentRate);
+                forceRefreshRate(mTargetMinRate, mTargetMaxRate, targetRate);
                 
                 // Reset flag after a delay to allow enforcement to complete
                 mHandler.postDelayed(() -> mIsEnforcingRate = false, 500);
@@ -133,63 +136,87 @@ public final class RefreshUtils {
         }
     }
 
-    private boolean isRateCompatibleWithPen(float rate) {
-        // Allow 60Hz and 120Hz (with tolerance for floating point comparison)
-        return (Math.abs(rate - 60f) < 1f) || (Math.abs(rate - 120f) < 1f);
+    private boolean isRateInTargetRange(float rate) {
+        // Check if rate is within our min-max range (with tolerance for floating point)
+        return (rate >= (mTargetMinRate - 1f)) && (rate <= (mTargetMaxRate + 1f));
     }
 
-    private float selectBestPenRate(float currentRate) {
-        // If current rate is below 90Hz, switch to 60Hz; otherwise switch to 120Hz
-        return currentRate < 90f ? 60f : 120f;
+    private float selectBestRate(float currentRate) {
+        // If we're in fixed mode (min == max), use that
+        if (Math.abs(mTargetMinRate - mTargetMaxRate) < 1f) {
+            return mTargetMinRate;
+        }
+        
+        // For dynamic mode, choose closest valid rate
+        if (currentRate < 90f) {
+            return mTargetMinRate;
+        } else {
+            return mTargetMaxRate;
+        }
     }
 
-     // Force the display to a specific refresh rate by setting min, max, and user rates.
-    private void forceRefreshRate(float rate) {
+    // Force the display to specific refresh rates
+    private void forceRefreshRate(float minRate, float maxRate, float userRate) {
         try {
-            Settings.System.putFloat(mContext.getContentResolver(), KEY_MIN_REFRESH_RATE, rate);
-            Settings.System.putFloat(mContext.getContentResolver(), KEY_PEAK_REFRESH_RATE, rate);
-            Settings.System.putFloat(mContext.getContentResolver(), KEY_USER_REFRESH_RATE, rate);
-            logInfo("Forced refresh rate to: " + rate + "Hz");
+            Settings.System.putFloat(mContext.getContentResolver(), KEY_MIN_REFRESH_RATE, minRate);
+            Settings.System.putFloat(mContext.getContentResolver(), KEY_PEAK_REFRESH_RATE, maxRate);
+            Settings.System.putFloat(mContext.getContentResolver(), KEY_USER_REFRESH_RATE, userRate);
+            logInfo("Forced refresh rate: " + minRate + "-" + maxRate + "Hz (user: " + userRate + "Hz)");
         } catch (Exception e) {
             logError("Failed to force refresh rate: " + e.getMessage());
         }
     }
 
-     // Enable pen refresh rate mode.
-     // Register display listener to actively monitor and enforce rates.
     protected void setPenRefreshRate() {
+        setRefreshRateRange(PEN_MIN_RATE, PEN_MAX_RATE, "Dynamic (60-120Hz)");
+    }
+
+    protected void setFixedRefreshRate(float fixedRate) {
+        String modeName = "Fixed " + (int)fixedRate + "Hz";
+        setRefreshRateRange(fixedRate, fixedRate, modeName);
+    }
+
+    private void setRefreshRateRange(float minRate, float maxRate, String modeName) {
         boolean penMode = mSharedPrefs.getBoolean(KEY_PEN_MODE, false);
 
         if (!penMode) {
-            logInfo("Enabling pen mode - saving current refresh rates");
+            logInfo("Enabling pen mode with " + modeName);
             
             // Get current refresh rate settings
-            float maxRate = Settings.System.getFloat(mContext.getContentResolver(), KEY_PEAK_REFRESH_RATE, 144f);
-            float minRate = Settings.System.getFloat(mContext.getContentResolver(), KEY_MIN_REFRESH_RATE, 144f);
-            float userRate = Settings.System.getFloat(mContext.getContentResolver(), "user_refresh_rate", 0f);
+            float currentMaxRate = Settings.System.getFloat(mContext.getContentResolver(), 
+                                                           KEY_PEAK_REFRESH_RATE, 144f);
+            float currentMinRate = Settings.System.getFloat(mContext.getContentResolver(), 
+                                                           KEY_MIN_REFRESH_RATE, 144f);
+            float currentUserRate = Settings.System.getFloat(mContext.getContentResolver(), 
+                                                            "user_refresh_rate", 0f);
 
-            // Save current values in SharedPreferences for restoration later
+            // Save current values for restoration later
             mSharedPrefs.edit()
-                    .putFloat(KEY_MIN_REFRESH_RATE, minRate)
-                    .putFloat(KEY_PEAK_REFRESH_RATE, maxRate)
-                    .putFloat(KEY_USER_REFRESH_RATE, userRate)
+                    .putFloat(KEY_MIN_REFRESH_RATE, currentMinRate)
+                    .putFloat(KEY_PEAK_REFRESH_RATE, currentMaxRate)
+                    .putFloat(KEY_USER_REFRESH_RATE, currentUserRate)
                     .putBoolean(KEY_PEN_MODE, true)
                     .apply();
-
-            // Set fixed refresh rates for pen mode (60-120Hz only)
-            Settings.System.putFloat(mContext.getContentResolver(), KEY_MIN_REFRESH_RATE, PEN_MIN_RATE);
-            Settings.System.putFloat(mContext.getContentResolver(), KEY_PEAK_REFRESH_RATE, PEN_MAX_RATE);
-            Settings.System.putFloat(mContext.getContentResolver(), "user_refresh_rate", PEN_MAX_RATE);
-            
-            // Enable active monitoring
-            mPenModeActive = true;
-            registerDisplayListener();
-            
-            // Force initial rate check after a short delay
-            mHandler.postDelayed(() -> checkAndEnforceRefreshRate(), 200);
-            
-            logInfo("Pen mode enabled: " + PEN_MIN_RATE + "-" + PEN_MAX_RATE + "Hz with active enforcement");
+        } else {
+            logInfo("Updating pen mode to " + modeName);
         }
+
+        // Store target rates for enforcement
+        mTargetMinRate = minRate;
+        mTargetMaxRate = maxRate;
+
+        // Apply the new rates
+        float userRate = (minRate == maxRate) ? minRate : maxRate;
+        forceRefreshRate(minRate, maxRate, userRate);
+        
+        // Enable active monitoring
+        mPenModeActive = true;
+        registerDisplayListener();
+        
+        // Force initial rate check after a short delay
+        mHandler.postDelayed(() -> checkAndEnforceRefreshRate(), 200);
+        
+        logInfo("Pen mode configured: " + modeName + " with active enforcement");
     }
 
     protected void setDefaultRefreshRate() {

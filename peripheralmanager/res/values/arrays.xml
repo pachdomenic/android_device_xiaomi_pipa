@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+     Copyright (C) 2025 SheoranPranshu
+
+     SPDX-License-Identifier: Apache-2.0
+-->
+<resources>
+    <!-- Refresh Rate Options -->
+    <string-array name="refresh_rate_entries">
+        <item>@string/refresh_rate_dynamic</item>
+        <item>@string/refresh_rate_60hz</item>
+        <item>@string/refresh_rate_120hz</item>
+    </string-array>
+
+    <string-array name="refresh_rate_values">
+        <item>dynamic</item>
+        <item>60</item>
+        <item>120</item>
+    </string-array>
+</resources>
