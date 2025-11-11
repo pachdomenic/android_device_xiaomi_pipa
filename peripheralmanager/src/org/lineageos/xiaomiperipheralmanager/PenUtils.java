@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The LineageOS Project
+ * Copyright (C) 2023-2025 The LineageOS Project
  * Copyright (C) 2025 SheoranPranshu
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -91,7 +91,7 @@ public class PenUtils {
             applyRefreshRateMode(mCurrentRefreshMode);
             logInfo("Applied pen mode with refresh rate: " + mCurrentRefreshMode);
         } else {
-            logInfo("Pen hardware enabled without refresh rate constraints");
+            logInfo("Pen hardware enabled without refresh rate constraints (Stylus Mode off)");
         }
     }
 
@@ -107,9 +107,8 @@ public class PenUtils {
         // Clear system property
         SystemProperties.set("persist.vendor.parts.pen", "2");
         
-        // Restore default refresh rates only if they were being enforced
-        boolean stylusModeEnabled = mPreferences.getBoolean(STYLUS_MODE_KEY, false);
-        if (mRefreshUtils != null && stylusModeEnabled) {
+        // Restore default refresh rates
+        if (mRefreshUtils != null) {
             mRefreshUtils.setDefaultRefreshRate();
             logInfo("Restored default refresh rates");
         }
@@ -133,16 +132,15 @@ public class PenUtils {
         
         // Enable pen mode if:
         // 1. Stylus mode is enabled AND (pen is detected OR force recognize is on)
-        // 2. OR force recognize is enabled (backward compatibility)
-        boolean shouldEnablePen = (stylusModeEnabled && (penDetected || forceRecognize)) || forceRecognize;
+        boolean shouldEnablePen = stylusModeEnabled && (penDetected || forceRecognize);
         
         if (shouldEnablePen) {
-            logInfo("Pen mode should be enabled - Detected: " + penDetected + 
-                   ", Stylus mode: " + stylusModeEnabled + ", Force: " + forceRecognize);
+            logInfo("Enabling pen - Stylus mode: " + stylusModeEnabled + 
+                   ", Pen detected: " + penDetected + ", Force: " + forceRecognize);
             enablePenMode();
         } else {
-            logInfo("Pen mode should be disabled - Detected: " + penDetected + 
-                   ", Stylus mode: " + stylusModeEnabled);
+            logInfo("Disabling pen - Stylus mode: " + stylusModeEnabled + 
+                   ", Pen detected: " + penDetected);
             disablePenMode();
         }
     }
@@ -177,8 +175,9 @@ public class PenUtils {
         logInfo("Refresh rate mode changed to: " + mode);
         mCurrentRefreshMode = mode;
         
-        // Only apply if pen mode is currently active
-        if (mPenModeEnabled && mRefreshUtils != null) {
+        // Only apply if pen mode is currently active and stylus mode is enabled
+        boolean stylusModeEnabled = mPreferences.getBoolean(STYLUS_MODE_KEY, false);
+        if (mPenModeEnabled && mRefreshUtils != null && stylusModeEnabled) {
             applyRefreshRateMode(mode);
         }
     }
@@ -240,7 +239,12 @@ public class PenUtils {
 
     public static void onForceRecognizeChanged(boolean enabled) {
         logInfo("Force recognize setting changed to: " + enabled);
-        refreshPenMode();
+        boolean stylusModeEnabled = mPreferences.getBoolean(STYLUS_MODE_KEY, false);
+        if (stylusModeEnabled) {
+            refreshPenMode();
+        } else {
+            logInfo("Force recognize change ignored - Stylus Mode is off");
+        }
     }
 
     // Physical pen connected?

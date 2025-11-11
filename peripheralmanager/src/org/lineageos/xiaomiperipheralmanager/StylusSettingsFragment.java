@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The LineageOS Project
+ * Copyright (C) 2023-2025 The LineageOS Project
  * Copyright (C) 2025 SheoranPranshu
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,9 +17,14 @@
 
 package org.lineageos.xiaomiperipheralmanager;
 
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.preference.PreferenceManager;
 import android.util.Log;
 import androidx.preference.ListPreference;
@@ -39,46 +44,46 @@ public class StylusSettingsFragment extends PreferenceFragment implements
     private static final String STYLUS_MODE_KEY = "stylus_mode_key";
     private static final String FORCE_RECOGNIZE_STYLUS_KEY = "force_recognize_stylus_key";
     private static final String STYLUS_REFRESH_RATE_KEY = "stylus_refresh_rate_key";
+    private static final String FOOTER_KEY = "footer_key";
 
     private SharedPreferences mStylusPreference;
     private MainSwitchPreference mStylusModePref;
     private SwitchPreference mForceRecognizePref;
     private ListPreference mRefreshRatePref;
+    private FooterPreference mFooterPref;
+    
+    private Handler mHandler;
+    private boolean mIsHandlingChange = false;
+    
+    // Broadcast receiver for tile updates
+    private BroadcastReceiver mTileUpdateReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            logDebug("Received tile update broadcast");
+            // Use handler to avoid potential timing issues
+            mHandler.post(() -> refreshUI());
+        }
+    };
 
     @Override
     public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
         try {
             addPreferencesFromResource(R.xml.stylus_settings);
-
+            
+            mHandler = new Handler(Looper.getMainLooper());
             Context context = getContext();
             mStylusPreference = PreferenceManager.getDefaultSharedPreferences(context);
 
-            // Initialize main stylus mode switch
+            // Initialize preferences
             mStylusModePref = (MainSwitchPreference) findPreference(STYLUS_MODE_KEY);
-            if (mStylusModePref != null) {
-                mStylusModePref.setChecked(mStylusPreference.getBoolean(STYLUS_MODE_KEY, false));
-                logInfo("Stylus mode initialized: " + mStylusModePref.isChecked());
-            }
-
-            // Initialize force recognize switch
             mForceRecognizePref = (SwitchPreference) findPreference(FORCE_RECOGNIZE_STYLUS_KEY);
-            if (mForceRecognizePref != null) {
-                mForceRecognizePref.setChecked(mStylusPreference.getBoolean(FORCE_RECOGNIZE_STYLUS_KEY, false));
-                logInfo("Force recognize initialized: " + mForceRecognizePref.isChecked());
-            }
-
-            // Initialize refresh rate preference
             mRefreshRatePref = (ListPreference) findPreference(STYLUS_REFRESH_RATE_KEY);
-            if (mRefreshRatePref != null) {
-                String savedRate = mStylusPreference.getString(STYLUS_REFRESH_RATE_KEY, "dynamic");
-                mRefreshRatePref.setValue(savedRate);
-                updateRefreshRateSummary(savedRate);
-                logInfo("Refresh rate initialized: " + savedRate);
-            }
+            mFooterPref = (FooterPreference) findPreference(FOOTER_KEY);
+
+            // Load initial state
+            refreshUI();
             
-            // Update footer with current status
-            updateFooterInfo();
-            
+            logInfo("Stylus settings created successfully");
         } catch (Exception e) {
             logError("Error creating preferences: " + e.getMessage());
         }
@@ -88,9 +93,17 @@ public class StylusSettingsFragment extends PreferenceFragment implements
     public void onResume() {
         super.onResume();
         try {
+            // Register preference change listener
             mStylusPreference.registerOnSharedPreferenceChangeListener(this);
-            // Update footer when returning to this screen
-            updateFooterInfo();
+            
+            // Register broadcast receiver for tile updates
+            IntentFilter filter = new IntentFilter("org.lineageos.xiaomiperipheralmanager.STYLUS_MODE_CHANGED");
+            getContext().registerReceiver(mTileUpdateReceiver, filter);
+            
+            // Refresh UI to ensure sync with current state
+            refreshUI();
+            
+            logInfo("Stylus settings resumed");
         } catch (Exception e) {
             logError("Error in onResume: " + e.getMessage());
         }
@@ -100,7 +113,16 @@ public class StylusSettingsFragment extends PreferenceFragment implements
     public void onPause() {
         super.onPause();
         try {
+            // Unregister listeners
             mStylusPreference.unregisterOnSharedPreferenceChangeListener(this);
+            
+            try {
+                getContext().unregisterReceiver(mTileUpdateReceiver);
+            } catch (Exception e) {
+                // Receiver might not be registered
+            }
+            
+            logInfo("Stylus settings paused");
         } catch (Exception e) {
             logError("Error in onPause: " + e.getMessage());
         }
@@ -108,147 +130,183 @@ public class StylusSettingsFragment extends PreferenceFragment implements
 
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+        // Prevent recursive updates
+        if (mIsHandlingChange) {
+            logDebug("Ignoring recursive preference change");
+            return;
+        }
+        
+        mIsHandlingChange = true;
+        
         try {
             if (STYLUS_MODE_KEY.equals(key)) {
                 boolean enabled = sharedPreferences.getBoolean(key, false);
                 logInfo("Stylus mode changed to: " + enabled);
-                setStylusMode(enabled);
-                updateFooterInfo();
+                
+                // Apply immediately
+                PenUtils.onStylusModeChanged(enabled);
+                
+                if (enabled) {
+                    // Apply saved refresh rate
+                    String refreshRate = sharedPreferences.getString(STYLUS_REFRESH_RATE_KEY, "dynamic");
+                    PenUtils.setRefreshRateMode(refreshRate);
+                }
+                
+                // Update UI
+                refreshUI();
+                
             } else if (FORCE_RECOGNIZE_STYLUS_KEY.equals(key)) {
                 boolean enabled = sharedPreferences.getBoolean(key, false);
                 logInfo("Force recognize changed to: " + enabled);
-                setForceRecognizeStylus(enabled);
-                updateFooterInfo();
+                
+                // Apply immediately
+                PenUtils.onForceRecognizeChanged(enabled);
+                
+                // Update UI
+                refreshUI();
+                
             } else if (STYLUS_REFRESH_RATE_KEY.equals(key)) {
                 String newRate = sharedPreferences.getString(key, "dynamic");
                 logInfo("Refresh rate changed to: " + newRate);
-                setRefreshRate(newRate);
-                updateRefreshRateSummary(newRate);
-                updateFooterInfo();
+                
+                // Apply immediately if stylus mode is enabled
+                boolean stylusModeEnabled = sharedPreferences.getBoolean(STYLUS_MODE_KEY, false);
+                if (stylusModeEnabled) {
+                    PenUtils.setRefreshRateMode(newRate);
+                }
+                
+                // Update UI
+                refreshUI();
             }
         } catch (Exception e) {
             logError("Error handling preference change: " + e.getMessage());
+        } finally {
+            // Reset flag after a short delay
+            mHandler.postDelayed(() -> mIsHandlingChange = false, 100);
         }
     }
 
-    private void setStylusMode(boolean enabled) {
+    /**
+     * Refresh all UI elements to match current state
+     * This is called when preferences change or when returning to the screen
+     */
+    private void refreshUI() {
         try {
-            // Notify PenUtils about the mode change
-            PenUtils.onStylusModeChanged(enabled);
+            // Read current state
+            boolean stylusModeEnabled = mStylusPreference.getBoolean(STYLUS_MODE_KEY, false);
+            boolean forceRecognize = mStylusPreference.getBoolean(FORCE_RECOGNIZE_STYLUS_KEY, false);
+            String refreshRate = mStylusPreference.getString(STYLUS_REFRESH_RATE_KEY, "dynamic");
             
-            if (enabled) {
-                // Apply the saved refresh rate preference
-                String refreshRate = mStylusPreference.getString(STYLUS_REFRESH_RATE_KEY, "dynamic");
-                setRefreshRate(refreshRate);
-                logInfo("Stylus mode enabled with refresh rate: " + refreshRate);
-            } else {
-                logInfo("Stylus mode disabled - default refresh rates restored");
+            // Update stylus mode switch
+            if (mStylusModePref != null && mStylusModePref.isChecked() != stylusModeEnabled) {
+                mStylusModePref.setChecked(stylusModeEnabled);
+                logDebug("Updated stylus mode UI: " + stylusModeEnabled);
             }
+            
+            // Update force recognize switch
+            if (mForceRecognizePref != null && mForceRecognizePref.isChecked() != forceRecognize) {
+                mForceRecognizePref.setChecked(forceRecognize);
+                logDebug("Updated force recognize UI: " + forceRecognize);
+            }
+            
+            // Update refresh rate preference
+            if (mRefreshRatePref != null && !refreshRate.equals(mRefreshRatePref.getValue())) {
+                mRefreshRatePref.setValue(refreshRate);
+                updateRefreshRateSummary(refreshRate);
+                logDebug("Updated refresh rate UI: " + refreshRate);
+            }
+            
+            // Update footer
+            updateFooterInfo();
+            
         } catch (Exception e) {
-            logError("Error setting stylus mode: " + e.getMessage());
+            logError("Error refreshing UI: " + e.getMessage());
         }
     }
 
-     // Enable or disable force recognize mode
-    private void setForceRecognizeStylus(boolean enabled) {
-        try {
-            // Notify PenUtils about the setting change
-            PenUtils.onForceRecognizeChanged(enabled);
-            
-            if (enabled) {
-                logInfo("Force recognize enabled - third party styluses supported");
-            } else {
-                logInfo("Force recognize disabled - only Xiaomi pen supported");
-            }
-        } catch (Exception e) {
-            logError("Error setting force recognize: " + e.getMessage());
+    /**
+     * Update the refresh rate preference summary
+     */
+    private void updateRefreshRateSummary(String rateValue) {
+        if (mRefreshRatePref == null) return;
+        
+        String summary;
+        switch (rateValue) {
+            case "60":
+                summary = getString(R.string.refresh_rate_60hz);
+                break;
+            case "120":
+                summary = getString(R.string.refresh_rate_120hz);
+                break;
+            case "dynamic":
+            default:
+                summary = getString(R.string.refresh_rate_dynamic);
+                break;
         }
+        mRefreshRatePref.setSummary(summary);
     }
 
-     // Apply the selected refresh rate configuration
-    private void setRefreshRate(String rateValue) {
+    /**
+     * Update the footer preference with current status
+     */
+    private void updateFooterInfo() {
+        if (mFooterPref == null) return;
+        
         try {
             boolean stylusModeEnabled = mStylusPreference.getBoolean(STYLUS_MODE_KEY, false);
+            boolean penModeActive = PenUtils.isPenModeEnabled();
+            boolean penConnected = PenUtils.isPenConnected();
+            boolean forceRecognize = mStylusPreference.getBoolean(FORCE_RECOGNIZE_STYLUS_KEY, false);
+            String refreshRate = mStylusPreference.getString(STYLUS_REFRESH_RATE_KEY, "dynamic");
+            
+            StringBuilder info = new StringBuilder();
+            
+            // Original info text
+            info.append(getString(R.string.stylus_more_info));
+            info.append("\n\n");
+            
+            // Current status
+            String statusText;
             if (!stylusModeEnabled) {
-                logInfo("Stylus mode disabled, skipping refresh rate change");
-                return;
+                statusText = getString(R.string.stylus_status_inactive) + " (Off)";
+            } else if (penConnected) {
+                statusText = getString(R.string.stylus_status_active) + " (Pen Connected)";
+            } else if (forceRecognize) {
+                statusText = getString(R.string.stylus_status_active) + " (Force Mode)";
+            } else {
+                statusText = getString(R.string.stylus_status_inactive) + " (No Pen)";
             }
-
-            // Notify RefreshUtils to apply the rate
-            PenUtils.setRefreshRateMode(rateValue);
-            logInfo("Applied refresh rate mode: " + rateValue);
-        } catch (Exception e) {
-            logError("Error setting refresh rate: " + e.getMessage());
-        }
-    }
-
-     // Update the refresh rate preference summary
-    private void updateRefreshRateSummary(String rateValue) {
-        if (mRefreshRatePref != null) {
-            String summary;
-            switch (rateValue) {
+            info.append(getString(R.string.stylus_footer_status, statusText));
+            
+            // Current refresh rate mode
+            info.append("\n");
+            String rateText;
+            switch (refreshRate) {
                 case "60":
-                    summary = getString(R.string.refresh_rate_60hz);
+                    rateText = getString(R.string.refresh_rate_60hz);
                     break;
                 case "120":
-                    summary = getString(R.string.refresh_rate_120hz);
+                    rateText = getString(R.string.refresh_rate_120hz);
                     break;
                 case "dynamic":
                 default:
-                    summary = getString(R.string.refresh_rate_dynamic);
+                    rateText = getString(R.string.refresh_rate_dynamic);
                     break;
             }
-            mRefreshRatePref.setSummary(summary);
-        }
-    }
-
-     // Update the footer preference with current pen status and mode information.
-     // Shows: Status (Active/Inactive) and Current refresh rate mode
-    private void updateFooterInfo() {
-        try {
-            FooterPreference footerPref = (FooterPreference) findPreference("footer_key");
-            if (footerPref != null) {
-                boolean penModeActive = PenUtils.isPenModeEnabled();
-                String refreshRate = mStylusPreference.getString(STYLUS_REFRESH_RATE_KEY, "dynamic");
-                
-                StringBuilder info = new StringBuilder();
-                // Original info text from strings.xml
-                info.append(getString(R.string.stylus_more_info));
-                info.append("\n\n");
-                
-                // Current status
-                String statusText = penModeActive ? 
-                    getString(R.string.stylus_status_active) : 
-                    getString(R.string.stylus_status_inactive);
-                info.append(getString(R.string.stylus_footer_status, statusText));
-                
-                // Current refresh rate mode (only show when active)
-                if (penModeActive) {
-                    info.append("\n");
-                    String rateText;
-                    switch (refreshRate) {
-                        case "60":
-                            rateText = getString(R.string.refresh_rate_60hz);
-                            break;
-                        case "120":
-                            rateText = getString(R.string.refresh_rate_120hz);
-                            break;
-                        case "dynamic":
-                        default:
-                            rateText = getString(R.string.refresh_rate_dynamic);
-                            break;
-                    }
-                    info.append(getString(R.string.stylus_footer_refresh_rate, rateText));
-                }
-                
-                footerPref.setTitle(info.toString());
-            }
+            String appliedStatus = penModeActive ? "Applied" : "Saved";
+            info.append(getString(R.string.stylus_footer_refresh_rate, rateText + " (" + appliedStatus + ")"));
+            
+            mFooterPref.setTitle(info.toString());
         } catch (Exception e) {
             logError("Error updating footer: " + e.getMessage());
         }
     }
 
-    // Logging helpers with timestamps
+    // Logging helpers
+    private void logDebug(String message) {
+        Log.d(TAG, getTimestamp() + message);
+    }
+    
     private void logInfo(String message) {
         Log.i(TAG, getTimestamp() + message);
     }
