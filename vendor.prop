@@ -305,7 +305,7 @@ vendor.usb.use_gadget_hal=1
 ro.config.vc_call_vol_steps=11
 
 # WiFi
-wifi.aware.interface=wifi-aware0
+wifi.aware.interface=0
 
 # Zygote
 zygote.critical_window.minute=10
