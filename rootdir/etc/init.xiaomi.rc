@@ -40,7 +40,7 @@ on boot
     chmod 0700 /sys/bus/platform/devices/soc:fingerprint_fpc/power_cfg
 
     # WiFi country code
-    setprop ro.boot.wificountrycode US
+    setprop ro.boot.wificountrycode 00
 
 on post-fs-data
     mkdir /data/vendor/fortsense 0770 system system
