@@ -17,6 +17,9 @@ TARGET_ENABLE_BLUR := true
 # Bypass Charging
 BYPASS_CHARGE_SUPPORTED := true
 
+# GMS
+WITH_GMS := true
+
 # Inherit from pipa device
 $(call inherit-product, device/xiaomi/pipa/kona.mk)
 
