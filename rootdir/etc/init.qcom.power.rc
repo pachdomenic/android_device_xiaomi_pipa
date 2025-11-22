@@ -135,10 +135,6 @@ on init
     chown system system /dev/cpuset/camera-daemon-dedicated/tasks
     chmod 0664 /dev/cpuset/camera-daemon-dedicated/tasks
 
-    # report max frequency to unity tasks.
-    write /proc/sys/kernel/sched_lib_name "libunity.so,com.miHoYo.,libfb.so,liblogic.so,libssgamesdkcronet.so,libil2cpp.so,com.pubg.imobile,com.pubg.,com.activision."
-    write /proc/sys/kernel/sched_lib_mask_force 255
-
 on charger
     # Enable UFS powersaving
     write /sys/devices/platform/soc/${ro.boot.bootdevice}/clkscale_enable 1
