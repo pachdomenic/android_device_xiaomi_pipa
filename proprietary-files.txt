@@ -833,12 +833,12 @@ vendor/lib/libthermalclient.so
 vendor/lib64/libthermalclient.so
 
 # Thermal config
-vendor/etc/thermal-4k.conf
-vendor/etc/thermal-camera.conf
+vendor/etc/thermal-4k.conf|a4d29453ffea355792d0ba6dad343b9de1e31e57
+vendor/etc/thermal-camera.conf|65d8cb243cac4285a10487d4b43e97914a4f82f9
 vendor/etc/thermal-cclassvideo.conf
 vendor/etc/thermal-cgame.conf
 vendor/etc/thermal-chg-only.conf
-vendor/etc/thermal-class0.conf
+vendor/etc/thermal-class0.conf|5daf08f2488b6bf05d24023eff507ac6624facb3
 vendor/etc/thermal-engine.conf
 vendor/etc/thermal-global-4k.conf
 vendor/etc/thermal-global-camera.conf
@@ -853,30 +853,30 @@ vendor/etc/thermal-global-normal.conf
 vendor/etc/thermal-global-tgame.conf
 vendor/etc/thermal-global-video.conf
 vendor/etc/thermal-global-videochat.conf
-vendor/etc/thermal-huanji.conf
+vendor/etc/thermal-huanji.conf|f72eb40089f5aae15ec34dbd042a7a11c409f2b0
 vendor/etc/thermal-india-4k.conf
 vendor/etc/thermal-india-camera.conf
 vendor/etc/thermal-india-chg-only.conf
-vendor/etc/thermal-india-class0.conf
+vendor/etc/thermal-india-class0.conf|7cc57c1e625297c600c840a08e6e7d2d0af81817
 vendor/etc/thermal-india-huanji.conf
-vendor/etc/thermal-india-mgame.conf
+vendor/etc/thermal-india-mgame.conf|81be6383cf5e4a6593193174676b0087a0d3f5fc
 vendor/etc/thermal-india-nolimits.conf
-vendor/etc/thermal-india-normal.conf
-vendor/etc/thermal-india-tgame.conf
-vendor/etc/thermal-india-video.conf
+vendor/etc/thermal-india-normal.conf|b9d5cd05c8b9c4e2b46efbaa404756efe7513de4
+vendor/etc/thermal-india-tgame.conf|79cad249b6dda381e4d93946c44af153bbb9996f
+vendor/etc/thermal-india-video.conf|bb15b873112319704323f219b382bd18b1996b56
 vendor/etc/thermal-india-videochat.conf
 vendor/etc/thermal-map-global.conf
-vendor/etc/thermal-map-india.conf
-vendor/etc/thermal-map.conf
-vendor/etc/thermal-mgame.conf
-vendor/etc/thermal-nolimits.conf
-vendor/etc/thermal-normal.conf
-vendor/etc/thermal-region-map.conf
-vendor/etc/thermal-tgame.conf
-vendor/etc/thermal-video.conf
+vendor/etc/thermal-map-india.conf|c522b5f0b68187ff545ba241764f12621b1bb444
+vendor/etc/thermal-map.conf|0a85826bf82f79f7429ab47d5aafc1f5a63ab2bc
+vendor/etc/thermal-mgame.conf|cfd2221c74b40ab644fb66710388fed419446886
+vendor/etc/thermal-nolimits.conf|c7eaea7409d1f6ab32f32cba682fb2cd4d8fe06d
+vendor/etc/thermal-normal.conf|8dc1c5602002414eb03556a574eebe669b2b172e
+vendor/etc/thermal-region-map.conf|8a60e0d66e519e0301c3192a5c1740e21f2170bf
+vendor/etc/thermal-tgame.conf|f3fdcae889f44e70320aea480c1314a07f018715
+vendor/etc/thermal-video.conf|e2deb3c64d2239f27f0530a7eef4631451865af5
 vendor/etc/thermal-videochat.conf
 vendor/etc/thermal-yuanshen.conf
-vendor/etc/thermald-devices.conf
+vendor/etc/thermald-devices.conf|12d33ce9c3420572a07419d3317083eafe5b82e8
 
 # Time services
 vendor/app/TimeService/TimeService.apk
