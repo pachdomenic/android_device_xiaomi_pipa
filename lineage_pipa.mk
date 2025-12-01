@@ -38,6 +38,6 @@ PRODUCT_SYSTEM_NAME := pipa_cn
 PRODUCT_SYSTEM_DEVICE := pipa
 
 PRODUCT_BUILD_PROP_OVERRIDES += \
-    BuildFingerprint=Xiaomi/pipa_pad_cn/pipa:14/UKQ1.240624.001/OS2.0.13.0.UMZCNXM:user/release-keys \
+    BuildFingerprint=Xiaomi/pipa_pad_cn/pipa:14/UKQ1.240624.001/OS2.0.14.0.UMZCNXM:user/release-keys \
     DeviceName=$(PRODUCT_SYSTEM_DEVICE) \
     DeviceProduct=$(PRODUCT_SYSTEM_NAME)
