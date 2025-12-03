@@ -33,6 +33,7 @@ public class PenUtils {
     private static final int PEN_PRODUCT_ID = 19841;
 
     private static InputManager mInputManager;
+<<<<<<< HEAD
     private static SharedPreferences mPreferences;
     private static final String STYLUS_KEY = "stylus_switch_key";
 
@@ -59,6 +60,9 @@ public class PenUtils {
         logInfo("Enabling pen mode");
         try {
             SystemProperties.set("persist.vendor.parts.pen", "18");
+            if (mRefreshUtils != null) {
+                mRefreshUtils.setPenRefreshRate();
+            }
         } catch (Exception e) {
             logError("Failed to enable pen mode: " + e.getMessage());
         }
@@ -71,6 +75,9 @@ public class PenUtils {
         logInfo("Disabling pen mode");
         try {
             SystemProperties.set("persist.vendor.parts.pen", "2");
+            if (mRefreshUtils != null) {
+                mRefreshUtils.setDefaultRefreshRate();
+            }
         } catch (Exception e) {
             logError("Failed to disable pen mode: " + e.getMessage());
         }
