@@ -1,0 +1,7 @@
+runtime_resource_overlay {
+    name: "SettingsProviderOverlayDevice",
+    device_specific: true,
+    sdk_version: "current",
+    resource_dirs: ["res"],
+    certificate: "platform",
+}
