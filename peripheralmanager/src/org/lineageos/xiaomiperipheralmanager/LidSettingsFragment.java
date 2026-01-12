@@ -86,7 +86,7 @@ public class LidSettingsFragment extends PreferenceFragment implements
                 boolean newStatus = mLidPreference.getBoolean(key, false);
                 logInfo("Lid preference changed to: " + newStatus);
                 Settings.Global.putInt(getActivity().getContentResolver(),
-                                      "lid_behavior", newStatus ? 1 : 0);
+                                      Settings.Global.LID_BEHAVIOR, newStatus ? 1 : 0);
             } catch (Exception e) {
                 logError("Error handling preference change: " + e.getMessage());
             }
