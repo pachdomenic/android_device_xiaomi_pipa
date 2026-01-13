@@ -47,12 +47,15 @@ public class LidSettingsFragment extends PreferenceFragment implements
             SwitchPreference switchPreference = (SwitchPreference) findPreference(LID_KEY);
 
             if (switchPreference != null) {
-                switchPreference.setChecked(mLidPreference.getBoolean(LID_KEY, false));
+                boolean currentSetting = mLidPreference.getBoolean(LID_KEY, true);
+                switchPreference.setChecked(currentSetting);
                 switchPreference.setEnabled(true);
+                Settings.Global.putInt(getActivity().getContentResolver(),
+                    Settings.Global.LID_BEHAVIOR, currentSetting ? 1 : 0);
+                logInfo("Initialized lid_behavior to: " + (currentSetting ? 1 : 0));
             } else {
                 logError("Could not find lid switch preference");
             }
-            
             logInfo("Lid settings fragment created");
         } catch (Exception e) {
             logError("Error creating lid settings: " + e.getMessage());
