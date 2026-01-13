@@ -19,7 +19,7 @@
     <!-- Smart Cover -->
     <string name="lid_title">Smart Cover</string>
     <string name="lid_summary">Smart Cover Settings</string>
-    <string name="lid_switch_title">Toggle Smart Cover behaivor</string>
-    <string name="lid_switch_summary">This toggles the behaivor of the smart lid</string>
+    <string name="lid_switch_title">Toggle Smart Cover behavior</string>
+    <string name="lid_switch_summary">This toggles the smart lid features</string>
 
 </resources>
