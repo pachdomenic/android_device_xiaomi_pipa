@@ -73,4 +73,55 @@ else
     git clone --depth 1 "$DISPLAY_HAL_REPO" "$DISPLAY_HAL_DIR" || { echo "[ERROR] Failed to clone display HAL repo"; exit 1; }
 fi
 
+# Apply device patches
+echo "[INFO] Applying device patches..."
+
+# Get the root directory
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
+
+# Function to apply a patch
+apply_patch() {
+    local patch_name=$1
+    local target_path=$2
+
+    local patch_file="${SCRIPT_DIR}/patches/${patch_name}"
+
+    if [ ! -f "$patch_file" ]; then
+        echo "[!] Patch not found: $patch_name"
+        return 1
+    fi
+
+    local target_dir="${ROOT_DIR}/${target_path}"
+
+    if [ ! -d "$target_dir" ]; then
+        echo "[!] Target directory not found: $target_path"
+        return 1
+    fi
+
+    cd "$target_dir" || return 1
+
+    # Check if already applied (reverse check)
+    if git apply --check -R "$patch_file" &>/dev/null; then
+        echo "[~] Already applied: $patch_name"
+    # Check if can be applied
+    elif git apply --check "$patch_file" &>/dev/null; then
+        echo "[+] Applying: $patch_name"
+        git apply "$patch_file" || {
+            echo "[!] Failed to apply: $patch_name"
+            cd "$ROOT_DIR"
+            return 1
+        }
+    else
+        echo "[!] Cannot apply: $patch_name (conflicts or already modified)"
+    fi
+
+    cd "$ROOT_DIR" || return 1
+}
+
+# Add patches here
+apply_patch "Keyguard-Allow-locking-to-any-rotation-mode.patch" "frameworks/base"
+
+echo "[INFO] Patch application complete!"
+
 echo "[INFO] All repositories are set up!"
