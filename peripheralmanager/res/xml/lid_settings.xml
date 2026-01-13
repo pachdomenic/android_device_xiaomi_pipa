@@ -18,7 +18,7 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:title="@string/stylus_title">
 
-    <SwitchPreference
+    <com.android.settingslib.widget.MainSwitchPreference
         android:key="lid_switch_key"
         android:defaultValue="true"
         android:title="@string/lid_switch_title"
