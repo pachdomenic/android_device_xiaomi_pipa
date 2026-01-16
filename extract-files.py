@@ -55,6 +55,9 @@ blob_fixups: blob_fixups_user_type = {
         .regex_replace(r'writepid /dev/stune/nnapi-hal/tasks', 'task_profiles NNApiHALPerformance'),
     'vendor/etc/init/vendor.qti.media.c2@1.0-service.rc': blob_fixup()
         .regex_replace(r'writepid /dev/cpuset/foreground/tasks', 'task_profiles ProcessCapacityHigh'),
+    'vendor/etc/msm_irqbalance.conf': blob_fixup()
+        .regex_replace('#arch_timer, arm-pmu, arch_mem_timer', '#arch_timer, arm-pmu, arch_mem_timer, msm_drm, kgsl_3d0_irq')
+        .regex_replace('IGNORED_IRQ=27,23,38', 'IGNORED_IRQ=27,23,38,115,332'),
     'vendor/lib64/camera/components/com.mi.node.watermark.so': blob_fixup()
         .add_needed('libpiex_shim.so'),
     ('vendor/lib64/libwvhidl.so', 'vendor/lib64/mediadrm/libwvdrmengine.so'): blob_fixup()
