@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2023 The LineageOS Project
+# Copyright (C) 2023-2026 The LineageOS Project
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -12,8 +12,9 @@ on boot
     chmod 0664 /dev/xiaomi-touch
     chown system system /dev/nanodev0
     chmod 0664 /dev/nanodev0
-    start xiaomi-keyboard
-
+    
+# Don't auto-start keyboard service
+# it will be started via property trigger when user enables it in settings
 service xiaomi-pen /vendor/bin/xiaomi-pen ${persist.vendor.parts.pen}
     class main
     user system
@@ -25,8 +26,15 @@ service xiaomi-keyboard /vendor/bin/xiaomi-keyboard
     class main
     user system
     group system input
-    oneshot
     disabled
+
+# Start keyboard service when user enables it
+on property:persist.vendor.parts.keyboard=1
+    start xiaomi-keyboard
+
+# Stop keyboard service when user disables it
+on property:persist.vendor.parts.keyboard=0
+    stop xiaomi-keyboard
 
 on property:persist.vendor.parts.pen=*
     start xiaomi-pen

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2023 The LineageOS Project
+// Copyright (C) 2023-2026 The LineageOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -32,6 +32,10 @@ cc_binary {
     srcs: [
         "xiaomi-pen.cpp",
     ],
+    shared_libs: [
+        "libcutils",
+        "liblog",
+    ],
 }
 
 cc_binary {
@@ -40,7 +44,6 @@ cc_binary {
     srcs: [
         "xiaomi-keyboard.cpp",
     ],
-
     shared_libs: [
         "libcutils",
         "liblog",

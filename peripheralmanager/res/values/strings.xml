@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-     Copyright (C) 2023-2025 The LineageOS Project
+     Copyright (C) 2023-2026 The LineageOS Project
 
      SPDX-License-Identifier: Apache-2.0
 -->
@@ -35,4 +35,14 @@
     <string name="lid_summary">Configure cover wake/sleep behavior</string>
     <string name="lid_switch_title">Enable Smart Cover</string>
     <string name="lid_switch_summary">Wake or sleep the device when the cover is opened or closed</string>
+
+    <!-- Xiaomi Keyboard -->
+    <string name="keyboard_title">Smart Keyboard</string>
+    <string name="keyboard_summary">Smart Keyboard Settings</string>
+    <string name="keyboard_switch_title">Keyboard Support</string>
+    <string name="keyboard_more_info">Enable this only if you own the Xiaomi Smart Keyboard. When enabled, the system will (hopefully) automatically detect keyboard connection and manage power states. Disabling this saves battery and system resources.\n\nNote: This is separate from Bluetooth keyboards, which work without this setting.</string>
+    <string name="keyboard_status_enabled">Keyboard monitoring enabled</string>
+    <string name="keyboard_status_disabled">Keyboard monitoring disabled</string>
+    <string name="keyboard_footer_status">Status: %s</string>
+
 </resources>
