@@ -19,6 +19,25 @@ for DIR in "${!REPOS[@]}"; do
     fi
 done
 
+# Prebuilt kernel
+PIPA_KERNEL_DIR="device/xiaomi/pipa-kernel"
+PIPA_KERNEL_REPO="https://github.com/Matrixx-Devices/device_xiaomi_pipa-kernel.git"
+PIPA_KERNEL_BRANCH="n0-bpf"
+
+if [ -d "$PIPA_KERNEL_DIR" ]; then
+    # Check if it's the correct repo
+    if git -C "$PIPA_KERNEL_DIR" remote get-url origin 2>/dev/null | grep -q "$PIPA_KERNEL_REPO"; then
+        echo "[INFO] device/xiaomi/pipa-kernel is already tracking the correct repo, skipping..."
+    else
+        echo "[INFO] device/xiaomi/pipa-kernel is tracking a different repo. Replacing it..."
+        rm -rf "$PIPA_KERNEL_DIR"
+        git clone --depth 1 -b "$PIPA_KERNEL_BRANCH" "$PIPA_KERNEL_REPO" "$PIPA_KERNEL_DIR" || { echo "[ERROR] Failed to clone pipa-kernel"; exit 1; }
+    fi
+else
+    echo "[INFO] Cloning device/xiaomi/pipa-kernel..."
+    git clone --depth 1 -b "$PIPA_KERNEL_BRANCH" "$PIPA_KERNEL_REPO" "$PIPA_KERNEL_DIR" || { echo "[ERROR] Failed to clone pipa-kernel"; exit 1; }
+fi
+
 # Hardware/xiaomi
 HW_XIAOMI_DIR="hardware/xiaomi"
 HW_FORK_REPO="https://github.com/Matrixx-Devices/android_hardware_xiaomi.git"
