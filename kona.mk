@@ -235,10 +235,6 @@ PRODUCT_PACKAGES += \
 PRODUCT_PACKAGES += \
     android.hardware.health-service.qti
 
-$(call soong_config_set_bool,lineage_health,fast_charge_node,/sys/class/qcom-battery/restrict_chg)
-$(call soong_config_set_bool,lineage_health,fast_charge_value_none,1)
-$(call soong_config_set_bool,lineage_health,fast_charge_value_fast_charge,0)
-
 # GMS
 WITH_GMS_COMMS_SUITE := false
 USE_TABLET_BT_COD := true
@@ -272,8 +268,6 @@ PRODUCT_SET_DEBUGFS_RESTRICTIONS := true
 # Lineage Health
 PRODUCT_PACKAGES += \
     vendor.lineage.health-service.default
-
-$(call soong_config_set_bool,lineage_health,charging_control_supports_bypass,false)
 
 # Logging
 SPAMMY_LOG_TAGS := \
