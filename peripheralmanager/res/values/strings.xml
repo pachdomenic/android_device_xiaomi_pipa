@@ -15,4 +15,10 @@
     <string name="force_stylus_switch_title">Force recognize stylus</string>
     <string name="force_stylus_switch_summary">Enable this settings to allow using third party styluses</string>
     <string name="stylus_more_info">Stylus Mode limits display refresh rate to 60/120hz</string>
+
+    <!-- Smart Cover -->
+    <string name="lid_title">Smart Cover</string>
+    <string name="lid_summary">Configure cover wake/sleep behavior</string>
+    <string name="lid_switch_title">Enable Smart Cover</string>
+    <string name="lid_switch_summary">Wake or sleep the device when the cover is opened or closed</string>
 </resources>
