@@ -1,12 +1,9 @@
-diff --git a/packages/SystemUI/src/com/android/systemui/shade/NotificationShadeWindowControllerImpl.java b/packages/SystemUI/src/com/android/systemui/shade/NotificationShadeWindowControllerImpl.java
-index 157aa1b2ec8..f707ba6bb3d0 100644
 --- a/packages/SystemUI/src/com/android/systemui/shade/NotificationShadeWindowControllerImpl.java
 +++ b/packages/SystemUI/src/com/android/systemui/shade/NotificationShadeWindowControllerImpl.java
-@@ -498,13 +498,10 @@ public class NotificationShadeWindowControllerImpl implements NotificationShadeW
-     private void adjustScreenOrientation(NotificationShadeWindowState state) {
-         boolean dreamShowingAndRotationAllowed = dreamsV2() ? mContext.getResources().getBoolean(
+@@ -489,13 +489,10 @@ public class NotificationShadeWindowControllerImpl implements NotificationShadeW
+         boolean dreamShowingAndRotationAllowed = dreamsV2() && mContext.getResources().getBoolean(
                  com.android.internal.R.bool.config_alwaysAllowDreamRotation)
-                 && state.isOnOrGoingToDream : false;
+                 && state.isOnOrGoingToDream;
 -        if (state.bouncerShowing || (state.isKeyguardShowingAndNotOccluded()
 -                && !dreamShowingAndRotationAllowed) || state.dozing) {
 -            if (shouldEnableKeyguardScreenRotation()) {
@@ -21,5 +18,4 @@ index 157aa1b2ec8..f707ba6bb3d0 100644
          } else if (state.glanceableHubOrientationAware || dreamShowingAndRotationAllowed) {
              mLpChanged.screenOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR;
          } else {
-             mLpChanged.screenOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED;
-         }
+-- 
