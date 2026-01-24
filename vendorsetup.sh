@@ -5,8 +5,6 @@ declare -A REPOS=(
     ["vendor/xiaomi/pipa"]="https://github.com/Matrixx-Devices/vendor_xiaomi_pipa"
     ["vendor/xiaomi/pipa-firmware"]="https://codeberg.org/CuriousNom/proprietary_vendor_xiaomi_pipa-firmware"
     ["kernel/xiaomi/pipa"]="https://github.com/CuriousNom/n0_kernel_pipa"
-    ["device/qcom/wfd"]="https://github.com/Evolution-X-Devices/device_qcom_wfd"
-    ["vendor/qcom/wfd"]="https://github.com/Evolution-X-Devices/vendor_qcom_wfd"
 )
 
 # Continue with other repos
