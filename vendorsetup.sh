@@ -138,6 +138,7 @@ apply_patch() {
 
 # Add patches here
 apply_patch "Keyguard-Allow-locking-to-any-rotation-mode.patch" "frameworks/base"
+apply_patch "Stop-wake-from-lid-when-LidControlsSleep-disabled.patch" "frameworks/base"
 
 echo "[INFO] Patch application complete!"
 
