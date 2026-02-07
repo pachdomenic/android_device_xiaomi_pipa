@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <!-- Nexus Maintainer -->
-    <string name="nexus_official_build">true</string>
-    <string name="nexus_maintainer">Aryan</string>
-</resources>
