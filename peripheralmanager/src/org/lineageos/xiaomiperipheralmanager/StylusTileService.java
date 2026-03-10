@@ -1,175 +1,143 @@
 /*
- * Copyright (C) 2025 The LineageOS Project
- * Copyright (C) 2025 SheoranPranshu
+ * Copyright (C) 2025-2026 The LineageOS Project
+ * Copyright (C) 2025-2026 nullpointer1101
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 package org.lineageos.xiaomiperipheralmanager;
 
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
-import android.preference.PreferenceManager;
+import android.content.IntentFilter;
+import android.graphics.drawable.Icon;
+import android.os.Handler;
+import android.os.Looper;
 import android.service.quicksettings.Tile;
 import android.service.quicksettings.TileService;
 import android.util.Log;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Locale;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+import androidx.preference.PreferenceManager;
 
+/**
+ * Quick Settings tile for Stylus Mode.
+ */
 public class StylusTileService extends TileService {
 
     private static final String TAG = "XiaomiStylusTile";
-    private static final String STYLUS_MODE_KEY = "stylus_mode_key";
-    private static final String STYLUS_REFRESH_RATE_KEY = "stylus_refresh_rate_key";
-    private static final String FORCE_RECOGNIZE_STYLUS_KEY = "force_recognize_stylus_key";
-    
-    private Context mContext;
-    private SharedPreferences mPreferences;
-    private Tile mTile;
-    
-    // Current state cache
-    private boolean mStylusModeEnabled = false;
-    private String mRefreshRateMode = "dynamic";
 
-    @Override
-    public void onCreate() {
-        super.onCreate();
-        mContext = getApplicationContext();
-        mPreferences = PreferenceManager.getDefaultSharedPreferences(mContext);
-        logInfo("Stylus tile service created");
-    }
+    static final String ACTION_STYLUS_CHANGED =
+            "org.lineageos.xiaomiperipheralmanager.STYLUS_MODE_CHANGED";
+
+    private static final String STYLUS_MODE_KEY         = "stylus_mode_key";
+    private static final String STYLUS_REFRESH_RATE_KEY = "stylus_refresh_rate_key";
+
+    // Used only for the deferred retry in onStartListening.
+    private final Handler mHandler = new Handler(Looper.getMainLooper());
+
+    // Receiver for real-time updates originating from StylusSettingsFragment while QS is open.
+    private final BroadcastReceiver mSettingsReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (!ACTION_STYLUS_CHANGED.equals(intent.getAction())) return;
+            boolean active = PreferenceManager
+                    .getDefaultSharedPreferences(context)
+                    .getBoolean(STYLUS_MODE_KEY, false);
+            Log.d(TAG, "LocalBroadcast — stylus=" + active);
+            updateTile(active);
+        }
+    };
+
+    // -----------------------------------------------------------------------
+    // TileService lifecycle
+    // -----------------------------------------------------------------------
 
     @Override
     public void onStartListening() {
         super.onStartListening();
-        mTile = getQsTile();
-        if (mTile != null) {
-            syncFromSettings();
-            updateTileView();
-            logDebug("Tile listening started");
-        }
+
+        LocalBroadcastManager.getInstance(this)
+                .registerReceiver(mSettingsReceiver, new IntentFilter(ACTION_STYLUS_CHANGED));
+
+        boolean active = PreferenceManager
+                .getDefaultSharedPreferences(this)
+                .getBoolean(STYLUS_MODE_KEY, false);
+        Log.d(TAG, "onStartListening — stylus=" + active
+                + ", tile=" + (getQsTile() != null ? "ok" : "null"));
+
+        // Direct call — getQsTile() is documented non-null here.
+        updateTile(active);
+
+        final boolean activeFinal = active;
+        mHandler.postDelayed(() -> updateTile(activeFinal), 350);
     }
 
     @Override
     public void onStopListening() {
         super.onStopListening();
-        logDebug("Tile listening stopped");
+        mHandler.removeCallbacksAndMessages(null);
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(mSettingsReceiver);
     }
+
+    // -----------------------------------------------------------------------
+    // User interaction
+    // -----------------------------------------------------------------------
 
     @Override
     public void onClick() {
-        if (mTile == null) {
-            logError("Tile is null in onClick");
+        final Tile tile = getQsTile();
+        if (tile == null) {
+            Log.w(TAG, "onClick — tile is null");
             return;
         }
 
-        // Toggle the state
-        mStylusModeEnabled = !mStylusModeEnabled;
-        
-        // Update tile UI IMMEDIATELY (before any async operations)
-        updateTileView();
-        
-        // Now persist the changes
-        mPreferences.edit().putBoolean(STYLUS_MODE_KEY, mStylusModeEnabled).apply();
-        
-        // Apply the mode
-        try {
-            PenUtils.onStylusModeChanged(mStylusModeEnabled);
-            
-            if (mStylusModeEnabled) {
-                // Apply saved refresh rate when enabling
-                PenUtils.setRefreshRateMode(mRefreshRateMode);
-                logInfo("Stylus mode enabled with refresh rate: " + mRefreshRateMode);
-            } else {
-                logInfo("Stylus mode disabled");
-            }
-        } catch (Exception e) {
-            logError("Error applying stylus mode: " + e.getMessage());
-        }
-        
-        // Broadcast to update settings page if it's open
-        sendBroadcast(new Intent("org.lineageos.xiaomiperipheralmanager.STYLUS_MODE_CHANGED"));
+        final boolean newState = (tile.getState() != Tile.STATE_ACTIVE);
+        Log.d(TAG, "onClick — newState=" + newState);
+
+        // Immediate visual feedback before any I/O.
+        updateTile(newState);
+
+        // Read refresh rate before persisting the new stylus state.
+        final String refreshRate = PreferenceManager
+                .getDefaultSharedPreferences(this)
+                .getString(STYLUS_REFRESH_RATE_KEY, "dynamic");
+
+        // Persist the new state asynchronously.
+        PreferenceManager.getDefaultSharedPreferences(this)
+                .edit()
+                .putBoolean(STYLUS_MODE_KEY, newState)
+                .apply();
+
+        // PenUtils operations (sysprop write + input device iteration) are fast
+        // and safe to run on the main thread.
+        PenUtils.onStylusModeChanged(newState);
+        if (newState) PenUtils.setRefreshRateMode(refreshRate);
+
+        // Notify the settings page if it is currently open.
+        LocalBroadcastManager.getInstance(this)
+                .sendBroadcast(new Intent(ACTION_STYLUS_CHANGED));
     }
+
+    // -----------------------------------------------------------------------
+    // Helper
+    // -----------------------------------------------------------------------
 
     /**
-     * Sync state from SharedPreferences
-     * This is called when tile starts listening
+     * Sets tile state and icon atomically to match {@code active}.
+     * Falls back gracefully if the tile is transiently null.
      */
-    private void syncFromSettings() {
-        try {
-            mStylusModeEnabled = mPreferences.getBoolean(STYLUS_MODE_KEY, false);
-            mRefreshRateMode = mPreferences.getString(STYLUS_REFRESH_RATE_KEY, "dynamic");
-            logDebug("Synced from settings - Mode: " + mStylusModeEnabled + ", Rate: " + mRefreshRateMode);
-        } catch (Exception e) {
-            logError("Error syncing from settings: " + e.getMessage());
+    private void updateTile(boolean active) {
+        final Tile tile = getQsTile();
+        if (tile == null) {
+            Log.w(TAG, "updateTile — tile is null (skipping)");
+            return;
         }
-    }
-
-    /**
-     * Update the tile UI based on current state
-     * This is called immediately after state changes
-     */
-    private void updateTileView() {
-        if (mTile == null) return;
-
-        try {
-            // Set label
-            mTile.setLabel(getString(R.string.stylus_tile_label));
-            
-            // Format subtitle based on refresh rate mode
-            String subtitle = getRefreshRateDisplayText(mRefreshRateMode);
-            
-            // Update tile state and subtitle
-            if (mStylusModeEnabled) {
-                mTile.setState(Tile.STATE_ACTIVE);
-                mTile.setSubtitle(subtitle);
-            } else {
-                mTile.setState(Tile.STATE_INACTIVE);
-                mTile.setSubtitle(subtitle);
-            }
-            
-            // Apply changes immediately
-            mTile.updateTile();
-            
-            logDebug("Tile updated - State: " + (mStylusModeEnabled ? "Active" : "Inactive") + 
-                    ", Mode: " + subtitle);
-        } catch (Exception e) {
-            logError("Error updating tile: " + e.getMessage());
-        }
-    }
-
-    /**
-     * Convert refresh rate mode to display text
-     */
-    private String getRefreshRateDisplayText(String mode) {
-        switch (mode) {
-            case "60":
-                return "60Hz";
-            case "120":
-                return "120Hz";
-            case "dynamic":
-            default:
-                return "Dynamic";
-        }
-    }
-
-    // Logging helpers
-    private void logDebug(String message) {
-        Log.d(TAG, getTimestamp() + message);
-    }
-    
-    private void logInfo(String message) {
-        Log.i(TAG, getTimestamp() + message);
-    }
-    
-    private void logError(String message) {
-        Log.e(TAG, getTimestamp() + message);
-    }
-    
-    private String getTimestamp() {
-        return "[" + new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US).format(new Date()) + "] ";
+        tile.setState(active ? Tile.STATE_ACTIVE : Tile.STATE_INACTIVE);
+        tile.setIcon(Icon.createWithResource(this,
+                active ? R.drawable.ic_stylus_tile
+                       : R.drawable.ic_stylus_tile_off));
+        tile.updateTile();
     }
 }

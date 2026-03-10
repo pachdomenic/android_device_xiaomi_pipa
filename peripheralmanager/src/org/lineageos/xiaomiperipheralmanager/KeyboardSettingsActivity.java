@@ -26,7 +26,7 @@ public class KeyboardSettingsActivity extends CollapsingToolbarBaseActivity {
         
         Log.i(TAG, "Opening keyboard settings");
         
-        getFragmentManager().beginTransaction().replace(
+        getSupportFragmentManager().beginTransaction().replace(
             com.android.settingslib.collapsingtoolbar.R.id.content_frame,
                 new KeyboardSettingsFragment(), TAG_KEYBOARD).commit();
     }

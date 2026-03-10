@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-     Copyright (C) 2018-2025 The LineageOS Project
+     Copyright (C) 2018-2026 The LineageOS Project
 
-     Licensed under the Apache License, Version 2.0 (the "License"
+     Licensed under the Apache License, Version 2.0 (the "License");
      you may not use this file except in compliance with the License.
      You may obtain a copy of the License at
 
@@ -18,28 +18,28 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:title="@string/stylus_title">
 
-     <com.android.settingslib.widget.MainSwitchPreference
+    <com.android.settingslib.widget.MainSwitchPreference
         android:key="stylus_mode_key"
         android:title="@string/stylus_switch_title"
         android:defaultValue="false" />
 
-     <SwitchPreferenceCompat
+    <SwitchPreference
         android:key="force_recognize_stylus_key"
         android:title="@string/force_stylus_switch_title"
         android:summary="@string/force_stylus_switch_summary"
         android:defaultValue="false"
         android:dependency="stylus_mode_key" />
 
-     <ListPreference
+    <ListPreference
         android:key="stylus_refresh_rate_key"
         android:title="@string/stylus_refresh_rate_title"
-        android:summary="@string/stylus_refresh_rate_summary"
+        android:summary="%s"
         android:entries="@array/refresh_rate_entries"
         android:entryValues="@array/refresh_rate_values"
         android:defaultValue="dynamic"
         android:dependency="stylus_mode_key" />
 
-      <com.android.settingslib.widget.FooterPreference
+    <com.android.settingslib.widget.FooterPreference
         android:key="footer_key"
         android:title="@string/stylus_more_info"
         android:selectable="false" />

@@ -9,9 +9,9 @@ package org.lineageos.xiaomiperipheralmanager;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
+import androidx.preference.PreferenceManager;
 import android.util.Log;
-import androidx.preference.PreferenceFragment;
+import androidx.preference.PreferenceFragmentCompat;
 import com.android.settingslib.widget.FooterPreference;
 import com.android.settingslib.widget.MainSwitchPreference;
 
@@ -23,7 +23,7 @@ import java.util.Locale;
  * Settings fragment for keyboard configuration
  * Allows users to enable/disable keyboard monitoring service
  */
-public class KeyboardSettingsFragment extends PreferenceFragment implements
+public class KeyboardSettingsFragment extends PreferenceFragmentCompat implements
         SharedPreferences.OnSharedPreferenceChangeListener {
 
     private static final String TAG = "XiaomiKeyboardSettings";
