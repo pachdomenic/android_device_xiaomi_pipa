@@ -34,10 +34,23 @@ public class StylusTileService extends TileService {
     private static final String STYLUS_MODE_KEY         = "stylus_mode_key";
     private static final String STYLUS_REFRESH_RATE_KEY = "stylus_refresh_rate_key";
 
-    // Used only for the deferred retry in onStartListening.
     private final Handler mHandler = new Handler(Looper.getMainLooper());
 
-    // Receiver for real-time updates originating from StylusSettingsFragment while QS is open.
+    /**
+     * Reads prefs at execution time — never at scheduling time — to avoid stale state.
+     */
+    private final Runnable mDelayedUpdateRunnable = () -> {
+        boolean current = PreferenceManager
+                .getDefaultSharedPreferences(StylusTileService.this)
+                .getBoolean(STYLUS_MODE_KEY, false);
+        Log.d(TAG, "Delayed retry — stylus=" + current);
+        updateTile(current);
+    };
+
+    // -----------------------------------------------------------------------
+    // Sync receiver — updates tile while QS panel is open
+    // -----------------------------------------------------------------------
+
     private final BroadcastReceiver mSettingsReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -67,17 +80,18 @@ public class StylusTileService extends TileService {
         Log.d(TAG, "onStartListening — stylus=" + active
                 + ", tile=" + (getQsTile() != null ? "ok" : "null"));
 
-        // Direct call — getQsTile() is documented non-null here.
         updateTile(active);
 
-        final boolean activeFinal = active;
-        mHandler.postDelayed(() -> updateTile(activeFinal), 350);
+        // 350 ms retry for the cold-boot binder window where getQsTile() is
+        // transiently null. Lambda reads current prefs at execution time.
+        mHandler.removeCallbacks(mDelayedUpdateRunnable);
+        mHandler.postDelayed(mDelayedUpdateRunnable, 350);
     }
 
     @Override
     public void onStopListening() {
         super.onStopListening();
-        mHandler.removeCallbacksAndMessages(null);
+        mHandler.removeCallbacks(mDelayedUpdateRunnable);
         LocalBroadcastManager.getInstance(this).unregisterReceiver(mSettingsReceiver);
     }
 
@@ -99,45 +113,55 @@ public class StylusTileService extends TileService {
         // Immediate visual feedback before any I/O.
         updateTile(newState);
 
-        // Read refresh rate before persisting the new stylus state.
         final String refreshRate = PreferenceManager
                 .getDefaultSharedPreferences(this)
                 .getString(STYLUS_REFRESH_RATE_KEY, "dynamic");
 
-        // Persist the new state asynchronously.
         PreferenceManager.getDefaultSharedPreferences(this)
                 .edit()
                 .putBoolean(STYLUS_MODE_KEY, newState)
                 .apply();
 
-        // PenUtils operations (sysprop write + input device iteration) are fast
-        // and safe to run on the main thread.
         PenUtils.onStylusModeChanged(newState);
         if (newState) PenUtils.setRefreshRateMode(refreshRate);
 
-        // Notify the settings page if it is currently open.
         LocalBroadcastManager.getInstance(this)
                 .sendBroadcast(new Intent(ACTION_STYLUS_CHANGED));
     }
 
     // -----------------------------------------------------------------------
-    // Helper
+    // Tile rendering
     // -----------------------------------------------------------------------
 
     /**
-     * Sets tile state and icon atomically to match {@code active}.
-     * Falls back gracefully if the tile is transiently null.
+     * Applies state, icon, and refresh-rate subtitle to the tile.
+     * Reads refresh rate from prefs at call time so the subtitle stays correct
+     * after a refresh-rate change even without a full tile rebind.
      */
     private void updateTile(boolean active) {
         final Tile tile = getQsTile();
         if (tile == null) {
-            Log.w(TAG, "updateTile — tile is null (skipping)");
+            Log.w(TAG, "updateTile — tile is null");
             return;
         }
+
+        final String rate = PreferenceManager
+                .getDefaultSharedPreferences(this)
+                .getString(STYLUS_REFRESH_RATE_KEY, "dynamic");
+
         tile.setState(active ? Tile.STATE_ACTIVE : Tile.STATE_INACTIVE);
         tile.setIcon(Icon.createWithResource(this,
                 active ? R.drawable.ic_stylus_tile
                        : R.drawable.ic_stylus_tile_off));
+        tile.setSubtitle(rateLabel(rate));
         tile.updateTile();
+    }
+
+    private static String rateLabel(String rate) {
+        switch (rate) {
+            case "60":  return "60 Hz";
+            case "120": return "120 Hz";
+            default:    return "Dynamic";
+        }
     }
 }

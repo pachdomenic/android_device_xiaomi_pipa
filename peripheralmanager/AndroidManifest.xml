@@ -98,7 +98,7 @@
 
         <service
             android:name=".StylusTileService"
-            android:icon="@drawable/ic_stylus_tile"
+            android:icon="@drawable/ic_stylus_tile_off"
             android:label="@string/stylus_title"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE"
             android:exported="true">

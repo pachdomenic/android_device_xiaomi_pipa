@@ -50,9 +50,6 @@ public class StylusSettingsFragment extends PreferenceFragmentCompat implements
 
     private static final String TAG = "XiaomiStylusSettings";
 
-    // -----------------------------------------------------------------------
-    // Preference keys
-    // -----------------------------------------------------------------------
     private static final String STYLUS_MODE_KEY         = "stylus_mode_key";
     private static final String FORCE_RECOGNIZE_KEY     = "force_recognize_stylus_key";
     private static final String FOOTER_KEY              = "footer_key";
@@ -62,9 +59,6 @@ public class StylusSettingsFragment extends PreferenceFragmentCompat implements
     private static final String RATE_60      = "60";
     private static final String RATE_120     = "120";
 
-    // -----------------------------------------------------------------------
-    // State
-    // -----------------------------------------------------------------------
     private SharedPreferences    mPrefs;
     private MainSwitchPreference mStylusModePref;
     private SwitchPreference     mForceRecognizePref;
@@ -73,26 +67,23 @@ public class StylusSettingsFragment extends PreferenceFragmentCompat implements
 
     private final Handler mHandler = new Handler(Looper.getMainLooper());
 
-    /**
-     * Per-key re-entry guard: prevents recursive callbacks when we write a key
-     * ourselves inside onSharedPreferenceChanged (e.g. setChecked → pref write).
-     */
+    // Per-key re-entry guard
     private String mHandlingKey = null;
 
     // -----------------------------------------------------------------------
-    // Broadcast receiver — keeps this fragment in sync with the QS tile
+    // Tile sync receiver — keeps fragment in sync when QS tile is toggled
     // -----------------------------------------------------------------------
 
     private final BroadcastReceiver mTileChangeReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            logDebug("Tile-change broadcast received — refreshing UI");
+            logDebug("Tile-change broadcast — refreshing UI");
             mHandler.post(() -> refreshUI());
         }
     };
 
     // -----------------------------------------------------------------------
-    // PreferenceFragmentCompat lifecycle
+    // Lifecycle
     // -----------------------------------------------------------------------
 
     @Override
@@ -152,11 +143,13 @@ public class StylusSettingsFragment extends PreferenceFragmentCompat implements
                     PenUtils.setRefreshRateMode(
                             prefs.getString(STYLUS_REFRESH_RATE_KEY, RATE_DYNAMIC));
                 }
+                notifyTile();
 
             } else if (FORCE_RECOGNIZE_KEY.equals(key)) {
                 boolean enabled = prefs.getBoolean(key, false);
                 logInfo("Force recognize → " + enabled);
                 PenUtils.onForceRecognizeChanged(enabled);
+                notifyTile();
 
             } else if (STYLUS_REFRESH_RATE_KEY.equals(key)) {
                 String rate = prefs.getString(key, RATE_DYNAMIC);
@@ -164,17 +157,11 @@ public class StylusSettingsFragment extends PreferenceFragmentCompat implements
                 if (prefs.getBoolean(STYLUS_MODE_KEY, false)) {
                     PenUtils.setRefreshRateMode(rate);
                 }
+                // Notify tile so subtitle updates even when QS is closed.
+                notifyTile();
             }
 
             refreshUI();
-
-            // Notify QS tile via both channels:
-            //   1. LocalBroadcast — instant update if QS panel is currently open.
-            //   2. requestListeningState — forces onStartListening() if QS is closed.
-            LocalBroadcastManager.getInstance(requireContext())
-                    .sendBroadcast(new Intent(StylusTileService.ACTION_STYLUS_CHANGED));
-            TileService.requestListeningState(requireContext(),
-                    new ComponentName(requireContext(), StylusTileService.class));
 
         } finally {
             mHandler.post(() -> {
@@ -184,25 +171,39 @@ public class StylusSettingsFragment extends PreferenceFragmentCompat implements
     }
 
     // -----------------------------------------------------------------------
-    // UI helpers
+    // Tile notification — dual channel
+    // -----------------------------------------------------------------------
+
+    /**
+     * LocalBroadcast: instant update if QS panel is currently open.
+     * requestListeningState(): forces onStartListening() if QS is closed so the tile
+     * re-reads prefs and updates icon/subtitle without the user needing to open QS.
+     */
+    private void notifyTile() {
+        LocalBroadcastManager.getInstance(requireContext())
+                .sendBroadcast(new Intent(StylusTileService.ACTION_STYLUS_CHANGED));
+        TileService.requestListeningState(requireContext(),
+                new ComponentName(requireContext(), StylusTileService.class));
+    }
+
+    // -----------------------------------------------------------------------
+    // UI refresh
     // -----------------------------------------------------------------------
 
     private void refreshUI() {
-        boolean stylusMode  = mPrefs.getBoolean(STYLUS_MODE_KEY, false);
-        boolean forceRecog  = mPrefs.getBoolean(FORCE_RECOGNIZE_KEY, false);
-        String  refreshRate = mPrefs.getString(STYLUS_REFRESH_RATE_KEY, RATE_DYNAMIC);
+        final boolean stylusMode  = mPrefs.getBoolean(STYLUS_MODE_KEY, false);
+        final boolean forceRecog  = mPrefs.getBoolean(FORCE_RECOGNIZE_KEY, false);
+        final String  refreshRate = mPrefs.getString(STYLUS_REFRESH_RATE_KEY, RATE_DYNAMIC);
 
         if (mStylusModePref != null && mStylusModePref.isChecked() != stylusMode) {
             mStylusModePref.setChecked(stylusMode);
         }
-
         if (mForceRecognizePref != null && mForceRecognizePref.isChecked() != forceRecog) {
             mForceRecognizePref.setChecked(forceRecog);
         }
-
         if (mRefreshRatePref != null) {
-            // Only call setValue() when the value actually changed.
-            // Calling setValue() unconditionally triggers notifyChanged() → RecyclerView
+            // Guard setValue(): calling it unconditionally triggers notifyChanged() →
+            // RecyclerView item-change animation even when the value hasn't changed.
             String current = mRefreshRatePref.getValue();
             if (current == null || !current.equals(refreshRate)) {
                 mRefreshRatePref.setValue(refreshRate);
@@ -215,10 +216,10 @@ public class StylusSettingsFragment extends PreferenceFragmentCompat implements
     private void updateFooter(boolean stylusMode, boolean forceRecog, String refreshRate) {
         if (mFooterPref == null) return;
 
-        boolean penActive    = PenUtils.isPenModeEnabled();
-        boolean penConnected = PenUtils.isPenConnected();
+        final boolean penActive    = PenUtils.isPenModeEnabled();
+        final boolean penConnected = PenUtils.isPenConnected();
 
-        String statusText;
+        final String statusText;
         if (!stylusMode) {
             statusText = getString(R.string.stylus_status_inactive) + " (Off)";
         } else if (penConnected) {
@@ -229,19 +230,17 @@ public class StylusSettingsFragment extends PreferenceFragmentCompat implements
             statusText = getString(R.string.stylus_status_inactive) + " (No Pen)";
         }
 
-        String rateLabel   = getRefreshRateLabel(refreshRate);
-        String appliedNote = penActive ? "Applied" : "Saved";
-
         mFooterPref.setTitle(
                 getString(R.string.stylus_more_info)
                         + "\n\n"
                         + getString(R.string.stylus_footer_status, statusText)
                         + "\n"
                         + getString(R.string.stylus_footer_refresh_rate,
-                                rateLabel + " (" + appliedNote + ")"));
+                                getRateLabel(refreshRate)
+                                + " (" + (penActive ? "Applied" : "Saved") + ")"));
     }
 
-    private String getRefreshRateLabel(String value) {
+    private String getRateLabel(String value) {
         switch (value) {
             case RATE_60:  return getString(R.string.refresh_rate_60hz);
             case RATE_120: return getString(R.string.refresh_rate_120hz);
