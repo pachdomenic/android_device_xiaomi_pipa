@@ -25,5 +25,5 @@ service xiaomi-keyboard /vendor/bin/xiaomi-keyboard
     oneshot
     disabled
 
-on property:persist.vendor.parts.pen=*
+on property:sys.vendor.parts.pen_trigger=*
     start xiaomi-pen
