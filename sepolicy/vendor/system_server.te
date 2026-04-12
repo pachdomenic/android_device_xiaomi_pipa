@@ -3,3 +3,6 @@ binder_call(system_server, xiaomi_keyboard)
 # Allow system_server to read Fast Charging status
 allow system_server vendor_sysfs_battery_supply:file { getattr open read };
 allow system_server vendor_sysfs_battery_supply:file rw_file_perms;
+
+# Ntsync
+allow system_server ntsync_device:chr_file { getattr open read write ioctl };

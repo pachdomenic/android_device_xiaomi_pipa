@@ -50,6 +50,9 @@
 # Mlipay
 /vendor/bin/mlipayd@1\.1                                                                            u:object_r:hal_mlipay_default_exec:s0
 
+# NtSync
+/dev/ntsync                                                                                          u:object_r:ntsync_device:s0
+
 # Pen
 /vendor/bin/xiaomi-pen		                                                                        u:object_r:xiaomi_pen_exec:s0
 
