@@ -1,0 +1,165 @@
+diff --git a/libs/WindowManager/Shell/res/drawable/ic_desktop_pill_dots.xml b/libs/WindowManager/Shell/res/drawable/ic_desktop_pill_dots.xml
+new file mode 100644
+index 000000000..c201e0038
+--- /dev/null
++++ b/libs/WindowManager/Shell/res/drawable/ic_desktop_pill_dots.xml
+@@ -0,0 +1,23 @@
++<vector xmlns:android="http://schemas.android.com/apk/res/android"
++    android:width="120dp"
++    android:height="30dp"
++    android:viewportWidth="120"
++    android:viewportHeight="30"
++    android:tint="?android:attr/colorControlNormal">
++
++    <path
++        android:fillColor="@android:color/white"
++        android:fillAlpha="0.5"
++        android:pathData="M45,15 m-4,0 a4,4 0 1,1 8,0 a4,4 0 1,1 -8,0" />
++
++    <path
++        android:fillColor="@android:color/white"
++        android:fillAlpha="0.5"
++        android:pathData="M60,15 m-4,0 a4,4 0 1,1 8,0 a4,4 0 1,1 -8,0" />
++
++    <path
++        android:fillColor="@android:color/white"
++        android:fillAlpha="0.5"
++        android:pathData="M75,15 m-4,0 a4,4 0 1,1 8,0 a4,4 0 1,1 -8,0" />
++
++</vector>
+\ No newline at end of file
+diff --git a/libs/WindowManager/Shell/src/com/android/wm/shell/windowdecor/DesktopModeWindowDecoration.java b/libs/WindowManager/Shell/src/com/android/wm/shell/windowdecor/DesktopModeWindowDecoration.java
+index c00d04e05..8c691db3e 100644
+--- a/libs/WindowManager/Shell/src/com/android/wm/shell/windowdecor/DesktopModeWindowDecoration.java
++++ b/libs/WindowManager/Shell/src/com/android/wm/shell/windowdecor/DesktopModeWindowDecoration.java
+@@ -43,6 +43,10 @@ import static com.android.wm.shell.windowdecor.DragResizeWindowGeometry.getResiz
+ import static com.android.wm.shell.windowdecor.DragResizeWindowGeometry.getResizeHandleEdgeInset;
+ import static com.android.wm.shell.windowdecor.viewholder.AppHandleIdentifier.AppHandleWindowingMode;
+ 
++import android.provider.Settings;
++import android.util.Log;
++import android.util.TypedValue;
++import android.widget.ImageView;
+ import android.annotation.NonNull;
+ import android.annotation.Nullable;
+ import android.app.ActivityManager;
+@@ -545,6 +549,8 @@ public class DesktopModeWindowDecoration extends WindowDecoration<WindowDecorLin
+         relayout(mRelayoutParams, startT, finishT, wct, oldRootView, taskSurface, mResult);
+         // After this line, mTaskInfo is up-to-date and should be used instead of taskInfo
+ 
++        updatePillStyle();
++
+         if (!wct.isEmpty()) {
+             if (DesktopExperienceFlags.ENABLE_DESKTOP_WINDOWING_PIP.isTrue()
+                     && mRelayoutParams.mShouldSetAppBounds) {
+@@ -2171,4 +2177,52 @@ public class DesktopModeWindowDecoration extends WindowDecoration<WindowDecorLin
+             mUsed = true;
+         }
+     }
++
++    private void updatePillStyle() {
++        if (mResult.mRootView == null) return;
++
++        try {
++            ImageButton handle = mResult.mRootView.findViewById(R.id.caption_handle);
++            if (handle == null) {
++                //Log.e("DesktopModeFix", "CRASH PREVENTED: Handle view is NULL!");
++                return;
++            }
++
++            int style = Settings.Global.getInt(
++                    mContext.getContentResolver(), "desktop_mode_pill_style", 0);
++
++            //Log.d("DesktopModeFix", "Applying Pill Style: " + style);
++
++            int padVert = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 16, 
++                    mContext.getResources().getDisplayMetrics());
++            int padHorz = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 10, 
++                    mContext.getResources().getDisplayMetrics());
++
++            switch (style) {
++                case 0:
++                    handle.setAlpha(0.0f);
++                    break;
++                    
++                case 2:
++                    handle.setAlpha(1.0f);
++                    handle.setBackgroundResource(android.R.color.transparent);
++                    handle.setImageResource(R.drawable.ic_desktop_pill_dots);
++                    handle.setPadding(0, 0, 0, 0);
++                    handle.setScaleType(ImageView.ScaleType.FIT_CENTER);
++                    break;
++                    
++                case 1:
++                default:
++                    handle.setAlpha(1.0f);
++                    handle.setBackgroundResource(android.R.color.transparent);
++                    handle.setImageResource(R.drawable.decor_handle_dark);
++                    handle.setPadding(padHorz, padVert, padHorz, padVert);
++                    handle.setScaleType(ImageView.ScaleType.FIT_XY);
++                    break;
++            }
++
++        } catch (Exception e) {
++            //Log.e("DesktopModeFix", "CRASH CAUGHT! Here is the error:", e);
++        }
++    }
+ }
+diff --git a/services/core/java/com/android/server/wm/DisplayContent.java b/services/core/java/com/android/server/wm/DisplayContent.java
+index 615404258..22af1ccf5 100644
+--- a/services/core/java/com/android/server/wm/DisplayContent.java
++++ b/services/core/java/com/android/server/wm/DisplayContent.java
+@@ -6824,6 +6824,24 @@ class DisplayContent extends RootDisplayArea implements WindowManagerPolicy.Disp
+ 
+     @Override
+     boolean getIgnoreOrientationRequest() {
++        // Check if the immediate top activity requsets fixed landscape.
++        // This prevents Size Compat mode (SCM) from incorrectly letterboxing
++        // landscape only games during the initial launch transition.
++        final ActivityRecord topActivity = topRunningActivity();
++        if (topActivity != null && android.content.pm.ActivityInfo
++                .isFixedOrientationLandscape(topActivity.getRequestedOrientation())) {
++            return false;
++        }
++
++        // Fallback to the underlying orientation source to ensure transparnt
++        // overlays (e.g., GooglePlay games sign-in bottom sheets) don't
++        // inadvertently trigger the large screen portrait fallback.
++        final ActivityRecord orientationSource = getLastOrientationSourceApp();
++        if (orientationSource != null && android.content.pm.ActivityInfo
++                .isFixedOrientationLandscape(orientationSource.getRequestedOrientation())) {
++            return false;
++        }
++
+         if (mHasSetIgnoreOrientationRequest
+                 || !com.android.window.flags.Flags.universalResizableByDefault()) {
+             return super.getIgnoreOrientationRequest();
+diff --git a/services/core/java/com/android/server/wm/DisplayRotation.java b/services/core/java/com/android/server/wm/DisplayRotation.java
+index 3b152a97b..32778afd2 100644
+--- a/services/core/java/com/android/server/wm/DisplayRotation.java
++++ b/services/core/java/com/android/server/wm/DisplayRotation.java
+@@ -549,6 +549,24 @@ public class DisplayRotation {
+         final int lastOrientation = mLastOrientation;
+         @Surface.Rotation
+         int rotation = rotationForOrientation(lastOrientation, oldRotation);
++
++        // Preserve locked user rotation across screen off/on and keyguard
++        if (mUserRotationMode == WindowManagerPolicy.USER_ROTATION_LOCKED) {
++            final WindowContainer<?> source = mDisplayContent.getLastOrientationSource();
++            final boolean isAppRequest = source != null &&
++                    (source.asActivityRecord() != null ||
++                    (source.asWindowState() != null && source.asWindowState().mActivityRecord != null));
++
++            // If an app explicitly requests a fixed orientation (e.g., a landscape game),
++            // allow it to override the user lock. Otherwise, preserve the user's locked rotation.
++            if (!isAppRequest || !ActivityInfo.isFixedOrientation(lastOrientation)) {
++                rotation = mUserRotation;
++                ProtoLog.v(WM_DEBUG_ORIENTATION,
++                        "Preserving locked user rotation=%s (%d)",
++                        Surface.rotationToString(rotation), rotation);
++            }
++        }
++
+         // Use the saved rotation for tabletop mode, if set.
+         if (mFoldController != null && mFoldController.shouldRevertOverriddenRotation()) {
+             int prevRotation = rotation;
