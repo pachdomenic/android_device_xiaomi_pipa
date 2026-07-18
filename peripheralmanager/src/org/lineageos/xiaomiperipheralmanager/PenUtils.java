@@ -33,8 +33,8 @@ public class PenUtils {
     private static final int PEN_PRODUCT_ID = 19841;
 
     private static InputManager mInputManager;
-<<<<<<< HEAD
     private static SharedPreferences mPreferences;
+    private static RefreshUtils mRefreshUtils;
     private static final String STYLUS_KEY = "stylus_switch_key";
 
     /**

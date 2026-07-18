@@ -18,6 +18,7 @@ import com.android.settingslib.widget.MainSwitchPreference;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+import android.util.Log;
 
 /**
  * Settings fragment for stylus/pen configuration
@@ -33,8 +34,8 @@ public class StylusSettingsFragment extends PreferenceFragment implements
 
     @Override
     public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
-        try {
-            addPreferencesFromResource(R.xml.stylus_settings);
+    addPreferencesFromResource(R.xml.stylus_settings);
+
 
     Context context = getContext();
     mStylusPreference = PreferenceManager.getDefaultSharedPreferences(context);
@@ -71,7 +72,7 @@ public class StylusSettingsFragment extends PreferenceFragment implements
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
                                           String key) {
-        if (FORCE_RECOGNIZE_STYLUS_KEY.equals(key) {
+        if (FORCE_RECOGNIZE_STYLUS_KEY.equals(key)) {
             setForceRecognizeStylus(sharedPreferences.getBoolean(key, false));
         }
 
@@ -89,6 +90,7 @@ public class StylusSettingsFragment extends PreferenceFragment implements
         PenUtils.enablePenMode();
       else
         PenUtils.disablePenMode();
+    }
     
     // Enhanced logging helpers to match other classes
     private void logDebug(String message) {
