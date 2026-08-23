@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+     Copyright (C) 2026 Mufasa
+     SPDX-License-Identifier: Apache-2.0
+-->
+<resources>
+    <!-- iOS Translucent Card Colors -->
+    <color name="stylus_card_bg">#E61C1C1E</color>
+    <color name="stylus_card_border">#1FFFFFFF</color>
+    <color name="stylus_icon_container_bg">#26FFFFFF</color>
+    <color name="stylus_text_primary">#FFFFFFFF</color>
+    <color name="stylus_text_secondary">#B3FFFFFF</color>
+
+    <!-- Accents -->
+    <color name="stylus_accent_charging">#30D158</color>
+    <color name="stylus_accent_warning">#FF9F0A</color>
+    <color name="stylus_accent_critical">#FF453A</color>
+    <color name="stylus_accent_connected">#0A84FF</color>
+    <color name="stylus_accent_neutral">#8E8E93</color>
+    <color name="stylus_battery_track">#26FFFFFF</color>
+</resources>

@@ -56,6 +56,13 @@ public class BootCompletedReceiver extends BroadcastReceiver {
         } catch (Exception e) {
             logError("Failed to initialize pen service: " + e.getMessage());
         }
+
+        try {
+            PenChargingService.start(context);
+            logInfo("Pen charging service initialized");
+        } catch (Exception e) {
+            logError("Failed to initialize pen charging service: " + e.getMessage());
+        }
     }
     
     private void logDebug(String message) {

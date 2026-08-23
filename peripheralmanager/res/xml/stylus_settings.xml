@@ -39,6 +39,12 @@
         android:defaultValue="dynamic"
         android:dependency="stylus_mode_key" />
 
+    <SwitchPreferenceCompat
+        android:key="stylus_charging_notification_key"
+        android:title="@string/stylus_charging_notification_title"
+        android:summary="@string/stylus_charging_notification_summary"
+        android:defaultValue="true" />
+
     <com.android.settingslib.widget.FooterPreference
         android:key="footer_key"
         android:title="@string/stylus_more_info"

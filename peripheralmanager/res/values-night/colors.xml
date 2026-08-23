@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+     Copyright (C) 2026 Mufasa
+     SPDX-License-Identifier: Apache-2.0
+-->
+<resources>
+    <color name="stylus_card_bg">#E61C1C1E</color>
+    <color name="stylus_card_border">#1FFFFFFF</color>
+    <color name="stylus_icon_container_bg">#26FFFFFF</color>
+    <color name="stylus_text_primary">#FFFFFFFF</color>
+    <color name="stylus_text_secondary">#B3FFFFFF</color>
+</resources>

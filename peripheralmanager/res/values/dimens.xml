@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+     Copyright (C) 2026 Mufasa
+     SPDX-License-Identifier: Apache-2.0
+-->
+<resources>
+    <!-- iOS-inspired Stylus Charging Floating Card Dimens -->
+    <dimen name="stylus_card_min_width">310dp</dimen>
+    <dimen name="stylus_card_max_width">380dp</dimen>
+    <dimen name="stylus_card_height">74dp</dimen>
+    <dimen name="stylus_card_corner_radius">24dp</dimen>
+    <dimen name="stylus_card_elevation">12dp</dimen>
+    <dimen name="stylus_card_top_margin">36dp</dimen>
+    <dimen name="stylus_card_blur_radius">25dp</dimen>
+
+    <!-- Icon Container -->
+    <dimen name="stylus_icon_container_size">46dp</dimen>
+    <dimen name="stylus_icon_container_radius">14dp</dimen>
+
+    <!-- Battery Capsule -->
+    <dimen name="stylus_battery_capsule_width">56dp</dimen>
+    <dimen name="stylus_battery_capsule_height">26dp</dimen>
+</resources>

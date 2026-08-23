@@ -34,6 +34,7 @@ import androidx.preference.ListPreference;
 import androidx.preference.PreferenceFragmentCompat;
 import androidx.preference.PreferenceManager;
 import androidx.preference.SwitchPreference;
+import androidx.preference.SwitchPreferenceCompat;
 
 import com.android.settingslib.widget.FooterPreference;
 import com.android.settingslib.widget.MainSwitchPreference;
@@ -95,6 +96,13 @@ public class StylusSettingsFragment extends PreferenceFragmentCompat implements
         mForceRecognizePref = findPreference(FORCE_RECOGNIZE_KEY);
         mRefreshRatePref    = findPreference(STYLUS_REFRESH_RATE_KEY);
         mFooterPref         = findPreference(FOOTER_KEY);
+
+        SwitchPreferenceCompat notifPref =
+                findPreference(PenChargingService.PREF_STYLUS_CHARGING_NOTIF);
+        if (notifPref != null) {
+            notifPref.setChecked(
+                    mPrefs.getBoolean(PenChargingService.PREF_STYLUS_CHARGING_NOTIF, true));
+        }
 
         refreshUI();
         logInfo("Stylus settings created");
