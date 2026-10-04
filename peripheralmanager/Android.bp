@@ -20,6 +20,7 @@ android_app {
         "androidx.core_core",
         "androidx.preference_preference",
         "androidx.cardview_cardview",
+        "androidx.dynamicanimation_dynamicanimation",
     ],
     required: [
         "xiaomi-pen",

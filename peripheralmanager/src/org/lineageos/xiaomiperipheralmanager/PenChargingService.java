@@ -16,6 +16,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.content.res.Configuration;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
@@ -23,10 +24,11 @@ import android.os.PowerManager;
 import android.os.SystemClock;
 import android.preference.PreferenceManager;
 import android.util.Log;
-import android.widget.Toast;
+
+import java.util.List;
 
 /**
- * Persistent Background Service managing the iOS-inspired stylus charging experience:
+ * Persistent Background Service managing the Material 3 Expressive stylus charging experience:
  * 1. On Connect / Attach: Triggers charging popup + ongoing notification.
  * 2. On Detach / Remove: Triggers disconnected popup + cleans up notification.
  * 3. On 100% Full Charge: Triggers fully charged popup (once per cycle).
@@ -134,7 +136,7 @@ public class PenChargingService extends Service {
             startMonitoring();
         }
 
-        Log.i(TAG, "PenChargingService initialized with iOS-inspired charging controller");
+        Log.i(TAG, "PenChargingService initialized with Material 3 Expressive charging controller");
     }
 
     @Override
@@ -292,7 +294,7 @@ public class PenChargingService extends Service {
         mWasCharging = true;
 
         if (justAttached) {
-            Log.i(TAG, "Stylus attached -> Triggering iOS floating charging popup (" +
+            Log.i(TAG, "Stylus attached -> Triggering charging pill (" +
                     (displayLevel >= 0 ? displayLevel + "%" : "unknown SoC") + ")");
             mLastBatteryLevel = displayLevel;
             StylusState state = (displayLevel >= 100) ? StylusState.FULLY_CHARGED : StylusState.CHARGING;
@@ -312,9 +314,6 @@ public class PenChargingService extends Service {
                     mHasShown100PercentPopup = true;
                     Log.i(TAG, "Stylus reached 100% -> Triggering full charge popup");
                     mPillController.showPopup(StylusState.FULLY_CHARGED, 100, null);
-                    mHandler.post(() -> Toast.makeText(getApplicationContext(),
-                            R.string.pen_fully_charged_toast,
-                            Toast.LENGTH_SHORT).show());
                 }
             }
 
@@ -351,15 +350,34 @@ public class PenChargingService extends Service {
             content = getString(R.string.pen_charging_notification_content_unknown);
         }
 
-        Notification notification = new Notification.Builder(this, CHANNEL_ID)
+        boolean night = (getResources().getConfiguration().uiMode
+                & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
+        int accent = getColor(night ? android.R.color.system_primary_dark
+                : android.R.color.system_primary_light);
+
+        // Android 16 Live Update: progress-centric style with a status bar chip
+        Notification.ProgressStyle style = new Notification.ProgressStyle()
+                .setStyledByProgress(true)
+                .setProgressSegments(List.of(
+                        new Notification.ProgressStyle.Segment(100).setColor(accent)))
+                .setProgressIndeterminate(batteryLevel < 0)
+                .setProgress(Math.max(0, Math.min(100, batteryLevel)));
+
+        Notification.Builder builder = new Notification.Builder(this, CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_stylus_charging)
                 .setContentTitle(title)
                 .setContentText(content)
+                .setStyle(style)
+                .setColor(accent)
                 .setOngoing(true)
                 .setOnlyAlertOnce(true)
-                .setCategory(Notification.CATEGORY_STATUS)
+                .setCategory(Notification.CATEGORY_PROGRESS)
                 .setVisibility(Notification.VISIBILITY_PUBLIC)
-                .build();
+                .setRequestPromotedOngoing(true);
+        if (batteryLevel >= 0) {
+            builder.setShortCriticalText(batteryLevel + "%");
+        }
+        Notification notification = builder.build();
 
         mNotificationManager.notify(NOTIFICATION_ID, notification);
     }

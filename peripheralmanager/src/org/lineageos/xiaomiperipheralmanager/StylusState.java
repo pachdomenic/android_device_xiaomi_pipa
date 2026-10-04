@@ -7,10 +7,9 @@
 package org.lineageos.xiaomiperipheralmanager;
 
 import android.content.Context;
-import android.graphics.Color;
 
 /**
- * UI State Model for the iOS-inspired Stylus Charging Popup.
+ * UI State Model for the Material 3 Expressive Stylus Charging Pill.
  */
 public enum StylusState {
     CHARGING(3500L),
@@ -68,24 +67,6 @@ public enum StylusState {
             case UNKNOWN:
             default:
                 return context.getString(R.string.pen_charging_notification_content_unknown);
-        }
-    }
-
-    public int getAccentColor() {
-        switch (this) {
-            case FULLY_CHARGED:
-            case CHARGING:
-                return Color.parseColor("#30D158"); // Apple Green
-            case LOW_BATTERY:
-                return Color.parseColor("#FF9F0A"); // Apple Orange
-            case CRITICAL_BATTERY:
-                return Color.parseColor("#FF453A"); // Apple Red
-            case CONNECTED:
-                return Color.parseColor("#0A84FF"); // Apple Blue
-            case DISCONNECTED:
-            case UNKNOWN:
-            default:
-                return Color.parseColor("#8E8E93"); // Neutral Gray
         }
     }
 }
