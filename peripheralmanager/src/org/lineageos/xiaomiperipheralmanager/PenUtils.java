@@ -39,6 +39,7 @@ public class PenUtils {
     private static final String STYLUS_MODE_KEY         = "stylus_mode_key";
     private static final String FORCE_STYLUS_KEY        = "force_recognize_stylus_key";
     private static final String STYLUS_REFRESH_RATE_KEY = "stylus_refresh_rate_key";
+    public  static final String STYLUS_REFRESH_EVENTS_KEY = "stylus_refresh_events_key";
 
     // Static singletons
     private static InputManager    mInputManager;
@@ -52,6 +53,7 @@ public class PenUtils {
     private static boolean mIsPenConnected    = false;
     private static boolean mListenerRegistered = false;
     private static boolean mIsSetup           = false;
+    private static boolean mIsPenDocked       = false;
     private static String  mCurrentRefreshMode = "dynamic";
 
     // -----------------------------------------------------------------------
@@ -76,6 +78,9 @@ public class PenUtils {
         mIsSetup      = true;
 
         mCurrentRefreshMode = mPreferences.getString(STYLUS_REFRESH_RATE_KEY, "dynamic");
+
+        PenChargingManager.PenChargingStatus status = PenChargingManager.getStatus(context);
+        mIsPenDocked = status != null && status.isDocked;
 
         boolean stylusEnabled  = mPreferences.getBoolean(STYLUS_MODE_KEY, false);
         boolean forceRecognize = mPreferences.getBoolean(FORCE_STYLUS_KEY, false);
@@ -142,13 +147,7 @@ public class PenUtils {
         mPenModeEnabled = true;
         SystemProperties.set("persist.vendor.parts.pen", "18");
 
-        boolean stylusModeEnabled = mPreferences != null
-                && mPreferences.getBoolean(STYLUS_MODE_KEY, false);
-        if (mRefreshUtils != null && stylusModeEnabled) {
-            applyRefreshRateMode(mCurrentRefreshMode);
-        } else {
-            logInfo("Pen hardware enabled without refresh constraints (Stylus Mode off)");
-        }
+        updateRefreshConstraints();
     }
 
     public static void disablePenMode() {
@@ -197,6 +196,45 @@ public class PenUtils {
         }
     }
 
+    /**
+     * With event switching on, pen-compatible rates are only applied while the pen is in hand
+     * and the user's regular refresh rates are restored once it is docked on the tablet.
+     * With it off (e.g. third-party pens without dock events), pen rates stay applied for as
+     * long as pen mode is enabled.
+     */
+    private static void updateRefreshConstraints() {
+        if (mRefreshUtils == null || mPreferences == null) return;
+        if (!mPenModeEnabled) return;
+
+        boolean stylusModeEnabled = mPreferences.getBoolean(STYLUS_MODE_KEY, false);
+        boolean eventsEnabled = mPreferences.getBoolean(STYLUS_REFRESH_EVENTS_KEY, true);
+
+        if (!stylusModeEnabled) {
+            logInfo("Pen hardware enabled without refresh constraints (Stylus Mode off)");
+            mRefreshUtils.setDefaultRefreshRate();
+        } else if (eventsEnabled && mIsPenDocked) {
+            logInfo("Pen docked — restoring regular refresh rates");
+            mRefreshUtils.setDefaultRefreshRate();
+        } else {
+            logInfo("Applying pen refresh rates (" + (eventsEnabled ? "pen in hand" : "events off") + ")");
+            applyRefreshRateMode(mCurrentRefreshMode);
+        }
+    }
+
+    /** Called when the "switch on pen events" setting changes. */
+    public static void onRefreshEventsChanged(boolean enabled) {
+        logInfo("Refresh rate event switching → " + enabled);
+        updateRefreshConstraints();
+    }
+
+    /** Called by PenChargingService when the pen is attached to or detached from the tablet. */
+    public static void onPenDockedChanged(boolean docked) {
+        if (mIsPenDocked == docked) return;
+        mIsPenDocked = docked;
+        logInfo("Pen " + (docked ? "docked" : "picked up"));
+        updateRefreshConstraints();
+    }
+
     private static void applyRefreshRateMode(String mode) {
         if (mRefreshUtils == null) {
             logError("RefreshUtils not initialized");
@@ -223,11 +261,7 @@ public class PenUtils {
     public static void setRefreshRateMode(String mode) {
         logInfo("Refresh rate mode → " + mode);
         mCurrentRefreshMode = mode;
-        boolean stylusModeEnabled = mPreferences != null
-                && mPreferences.getBoolean(STYLUS_MODE_KEY, false);
-        if (mPenModeEnabled && mRefreshUtils != null && stylusModeEnabled) {
-            applyRefreshRateMode(mode);
-        }
+        updateRefreshConstraints();
     }
 
     // -----------------------------------------------------------------------
@@ -316,6 +350,7 @@ public class PenUtils {
     // -----------------------------------------------------------------------
 
     public static boolean isPenConnected()       { return mIsPenConnected; }
+    public static boolean isPenDocked()          { return mIsPenDocked; }
     public static boolean isPenModeEnabled()     { return mPenModeEnabled; }
     public static String  getCurrentRefreshMode(){ return mCurrentRefreshMode; }
 

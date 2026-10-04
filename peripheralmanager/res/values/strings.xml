@@ -17,7 +17,10 @@
     <string name="force_stylus_switch_summary">Allows the official stylus to work without Bluetooth and enables support for third-party pens. Also forces the display to operate at 60/120 Hz even when no pen is connected.</string>
     <string name="stylus_refresh_rate_title">Refresh rate</string>
     <string name="stylus_refresh_rate_summary">Select display refresh rate for stylus mode</string>
-    <string name="stylus_more_info">Stylus Mode enables pen-compatible refresh rates when a supported stylus is connected. The display switches to 60 Hz or 120 Hz only while the pen is connected.</string>
+    <string name="stylus_refresh_events_title">Switch on pen events</string>
+    <string name="stylus_refresh_events_summary_on">Pen refresh rate while the pen is in hand, regular refresh rate when it\'s attached to the tablet</string>
+    <string name="stylus_refresh_events_summary_off">Always use pen refresh rate while Stylus Mode is active. Use this for third-party pens</string>
+    <string name="stylus_more_info">Stylus Mode enables pen-compatible refresh rates when a supported stylus is connected. The display switches to 60 Hz or 120 Hz while the pen is in use and returns to your regular refresh rate when the pen is attached to the tablet.</string>
 
     <!-- Refresh Rate Options -->
     <string name="refresh_rate_dynamic">Dynamic (60/120Hz)</string>

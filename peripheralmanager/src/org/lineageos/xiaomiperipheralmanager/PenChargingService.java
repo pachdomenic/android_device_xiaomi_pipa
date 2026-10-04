@@ -255,6 +255,7 @@ public class PenChargingService extends Service {
 
     private void updateChargingStatus() {
         PenChargingManager.PenChargingStatus status = PenChargingManager.getStatus(this);
+        PenUtils.onPenDockedChanged(status != null && status.isDocked);
         if (status == null || !status.isConnected || !status.isCharging) {
             if (mWasCharging) {
                 Log.i(TAG, "Stylus detached -> Triggering disconnected popup and removing notification");

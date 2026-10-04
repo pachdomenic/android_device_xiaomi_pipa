@@ -159,6 +159,10 @@ public class StylusSettingsFragment extends PreferenceFragmentCompat implements
                 PenUtils.onForceRecognizeChanged(enabled);
                 notifyTile();
 
+            } else if (PenUtils.STYLUS_REFRESH_EVENTS_KEY.equals(key)) {
+                PenUtils.onRefreshEventsChanged(prefs.getBoolean(key, true));
+                notifyTile();
+
             } else if (STYLUS_REFRESH_RATE_KEY.equals(key)) {
                 String rate = prefs.getString(key, RATE_DYNAMIC);
                 logInfo("Refresh rate → " + rate);
@@ -230,6 +234,9 @@ public class StylusSettingsFragment extends PreferenceFragmentCompat implements
         final String statusText;
         if (!stylusMode) {
             statusText = getString(R.string.stylus_status_inactive) + " (Off)";
+        } else if ((penConnected || forceRecog) && PenUtils.isPenDocked()
+                && mPrefs.getBoolean(PenUtils.STYLUS_REFRESH_EVENTS_KEY, true)) {
+            statusText = getString(R.string.stylus_status_inactive) + " (Pen Docked)";
         } else if (penConnected) {
             statusText = getString(R.string.stylus_status_active) + " (Pen Connected)";
         } else if (forceRecog) {

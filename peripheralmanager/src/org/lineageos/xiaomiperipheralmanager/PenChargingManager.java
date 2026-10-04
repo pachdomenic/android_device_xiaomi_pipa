@@ -43,11 +43,14 @@ public class PenChargingManager {
     public static class PenChargingStatus {
         public final boolean isConnected;
         public final boolean isCharging;
+        public final boolean isDocked; // magnetically attached to the tablet
         public final int batteryLevel; // 0-100, or -1 if unknown
 
-        public PenChargingStatus(boolean isConnected, boolean isCharging, int batteryLevel) {
+        public PenChargingStatus(boolean isConnected, boolean isCharging, boolean isDocked,
+                int batteryLevel) {
             this.isConnected = isConnected;
             this.isCharging = isCharging;
+            this.isDocked = isDocked;
             this.batteryLevel = batteryLevel;
         }
 
@@ -59,6 +62,7 @@ public class PenChargingManager {
         public String toString() {
             return "PenChargingStatus{isConnected=" + isConnected +
                     ", isCharging=" + isCharging +
+                    ", isDocked=" + isDocked +
                     ", batteryLevel=" + batteryLevel + "}";
         }
     }
@@ -110,7 +114,9 @@ public class PenChargingManager {
             Integer hall4 = readSysfsInt(basePath + "/reverse_chg_hall4");
             Integer chgMode = readSysfsInt(basePath + "/reverse_chg_mode");
 
-            boolean hallAttached = (hall3 != null && hall3 == 1) || (hall4 != null && hall4 == 1);
+            // Hall GPIOs are active low: 0 = pen attached, 1 = pen detached, -1 = no GPIO
+            boolean hallAvailable = (hall3 != null && hall3 >= 0) || (hall4 != null && hall4 >= 0);
+            boolean hallAttached = (hall3 != null && hall3 == 0) || (hall4 != null && hall4 == 0);
             boolean currentFlowing = iout != null && iout > 0;
             boolean modeActive = chgMode != null && chgMode == 1;
 
@@ -118,6 +124,8 @@ public class PenChargingManager {
             boolean isConnected = currentFlowing || hallAttached;
             // Charging if current is flowing, or mode is active while attached
             boolean isCharging = currentFlowing || (modeActive && hallAttached);
+            // Docked strictly follows the hall sensors when present
+            boolean isDocked = hallAvailable ? hallAttached : isConnected;
 
             // 3. Read battery SoC (Nuvolta IC reverse_pen_soc or capacity)
             int batteryLevel = -1;
@@ -140,10 +148,11 @@ public class PenChargingManager {
                 Log.d(TAG, "getStatus(): path=" + basePath + ", iout=" + iout + "mA, soc=" + soc +
                         ", hall3=" + hall3 + ", hall4=" + hall4 + ", chgMode=" + chgMode +
                         " => isConnected=" + isConnected + ", isCharging=" + isCharging +
+                        ", isDocked=" + isDocked +
                         ", battery=" + batteryLevel + "%");
             }
 
-            return new PenChargingStatus(isConnected, isCharging, batteryLevel);
+            return new PenChargingStatus(isConnected, isCharging, isDocked, batteryLevel);
         } catch (Exception e) {
             Log.e(TAG, "Failed to read pen charging status", e);
             return null;

@@ -40,6 +40,14 @@
         android:dependency="stylus_mode_key" />
 
     <SwitchPreferenceCompat
+        android:key="stylus_refresh_events_key"
+        android:title="@string/stylus_refresh_events_title"
+        android:summaryOn="@string/stylus_refresh_events_summary_on"
+        android:summaryOff="@string/stylus_refresh_events_summary_off"
+        android:defaultValue="true"
+        android:dependency="stylus_mode_key" />
+
+    <SwitchPreferenceCompat
         android:key="stylus_charging_notification_key"
         android:title="@string/stylus_charging_notification_title"
         android:summary="@string/stylus_charging_notification_summary"

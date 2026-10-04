@@ -225,7 +225,13 @@ public final class RefreshUtils {
         // Disable active monitoring first
         mPenModeActive = false;
         unregisterDisplayListener();
-        
+
+        // Nothing saved to restore, keep whatever the user has set now
+        if (!mSharedPrefs.getBoolean(KEY_PEN_MODE, false)) {
+            logInfo("Pen refresh rates not applied - nothing to restore");
+            return;
+        }
+
         // Get saved refresh rate values
         float defaultMinRate = mSharedPrefs.getFloat(KEY_MIN_REFRESH_RATE, 144f);
         float defaultMaxRate = mSharedPrefs.getFloat(KEY_PEAK_REFRESH_RATE, 144f);
