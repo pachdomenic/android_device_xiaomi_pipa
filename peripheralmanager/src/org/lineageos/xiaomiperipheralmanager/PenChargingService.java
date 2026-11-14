@@ -30,17 +30,21 @@ import java.util.List;
 /**
  * Persistent Background Service managing the Material 3 Expressive stylus charging experience:
  * 1. On Connect / Attach: Triggers charging popup + ongoing notification.
- * 2. On Detach / Remove: Triggers disconnected popup + cleans up notification.
+ * 2. On Detach / Remove (hall presence sensor): Triggers disconnected popup + cleans up
+ *    notifications. Charging stopping on its own does not count as a disconnect.
  * 3. On 100% Full Charge: Triggers fully charged popup (once per cycle).
- * 4. On Significant Battery Update: Updates popup in-place without duplicating windows.
- * 5. On Low/Critical Battery: Alerts with warning popup.
- * 6. On Manual Broadcast: Handles ACTION_SHOW_STYLUS_POPUP for testing and status checks.
+ * 4. On Charging Stopped while still attached: Replaces the progress notification with a
+ *    "stylus charged" notification.
+ * 5. On Significant Battery Update: Updates popup in-place without duplicating windows.
+ * 6. On Low/Critical Battery: Alerts with warning popup.
+ * 7. On Manual Broadcast: Handles ACTION_SHOW_STYLUS_POPUP for testing and status checks.
  */
 public class PenChargingService extends Service {
 
     private static final String TAG = "PenChargingService";
     private static final String CHANNEL_ID = "pen_charging_status";
     private static final int NOTIFICATION_ID = 1001;
+    private static final int CHARGED_NOTIFICATION_ID = 1002;
 
     public static final String ACTION_SHOW_STYLUS_POPUP =
             "org.lineageos.xiaomiperipheralmanager.ACTION_SHOW_STYLUS_POPUP";
@@ -62,6 +66,8 @@ public class PenChargingService extends Service {
     private final Handler mHandler = new Handler(Looper.getMainLooper());
     private boolean mIsMonitoring = false;
     private boolean mWasCharging = false;
+    // Last pen presence reported by the hall sensors, null until the first poll
+    private Boolean mWasDocked = null;
     private boolean mHasShown100PercentPopup = false;
     private boolean mHasWarnedLow = false;
     private boolean mHasWarnedCritical = false;
@@ -106,10 +112,8 @@ public class PenChargingService extends Service {
                         boolean enabled = prefs.getBoolean(key, true);
                         if (!enabled) {
                             hideNotification();
-                            mWasCharging = false;
-                            mHasShown100PercentPopup = false;
-                            mLastBatteryLevel = BATTERY_LEVEL_UNKNOWN;
-                            mFirstSeen99AtMs = null;
+                            hideChargedNotification();
+                            resetChargingState();
                         } else {
                             if (mPowerManager != null && mPowerManager.isInteractive()) {
                                 updateChargingStatus();
@@ -204,11 +208,18 @@ public class PenChargingService extends Service {
             mHandler.removeCallbacks(mPollRunnable);
             hideNotification();
             mPillController.hidePill();
-            mWasCharging = false;
-            mHasShown100PercentPopup = false;
-            mLastBatteryLevel = BATTERY_LEVEL_UNKNOWN;
-            mFirstSeen99AtMs = null;
+            resetChargingState();
+            mWasDocked = null;
         }
+    }
+
+    private void resetChargingState() {
+        mWasCharging = false;
+        mHasShown100PercentPopup = false;
+        mHasWarnedLow = false;
+        mHasWarnedCritical = false;
+        mLastBatteryLevel = BATTERY_LEVEL_UNKNOWN;
+        mFirstSeen99AtMs = null;
     }
 
     private void handleBluetoothConnected(Intent intent) {
@@ -255,23 +266,48 @@ public class PenChargingService extends Service {
 
     private void updateChargingStatus() {
         PenChargingManager.PenChargingStatus status = PenChargingManager.getStatus(this);
-        PenUtils.onPenDockedChanged(status != null && status.isDocked);
-        if (status == null || !status.isConnected || !status.isCharging) {
-            if (mWasCharging) {
-                Log.i(TAG, "Stylus detached -> Triggering disconnected popup and removing notification");
-                mPillController.showPopup(StylusState.DISCONNECTED, mLastBatteryLevel, null);
+        if (status == null) return;
+
+        // Pen presence strictly follows the hall sensors of the magnetic dock, so the charger
+        // stopping (e.g. once the pen is full) is not mistaken for the pen being removed.
+        boolean docked = status.isDocked;
+        boolean presenceKnown = mWasDocked != null;
+        boolean wasDocked = presenceKnown && mWasDocked;
+        mWasDocked = docked;
+        PenUtils.onPenDockedChanged(docked);
+
+        if (!docked) {
+            if (wasDocked) {
+                int level = mLastBatteryLevel != BATTERY_LEVEL_UNKNOWN
+                        ? mLastBatteryLevel : status.batteryLevel;
+                Log.i(TAG, "Stylus removed from tablet -> Triggering disconnected popup");
+                mPillController.showPopup(StylusState.DISCONNECTED, level, null);
+            }
+            if (!presenceKnown || wasDocked) {
                 hideNotification();
-                mWasCharging = false;
-                mHasShown100PercentPopup = false;
-                mHasWarnedLow = false;
-                mHasWarnedCritical = false;
-                mLastBatteryLevel = BATTERY_LEVEL_UNKNOWN;
-                mFirstSeen99AtMs = null;
+                hideChargedNotification();
+                resetChargingState();
             }
             return;
         }
 
-        // Pen is actively connected and charging
+        if (!status.isCharging) {
+            if (mWasCharging) {
+                int level = mLastBatteryLevel != BATTERY_LEVEL_UNKNOWN
+                        ? mLastBatteryLevel : status.batteryLevel;
+                Log.i(TAG, "Charging stopped while attached -> Stylus charged ("
+                        + (level >= 0 ? level + "%" : "unknown SoC") + ")");
+                if (!mHasShown100PercentPopup) {
+                    mPillController.showPopup(StylusState.FULLY_CHARGED, level, null);
+                }
+                hideNotification();
+                showChargedNotification(level);
+                resetChargingState();
+            }
+            return;
+        }
+
+        // Pen is attached and actively charging
         int rawLevel = -1;
         if (status.batteryLevel >= 0 && status.batteryLevel <= 100) {
             rawLevel = status.batteryLevel;
@@ -300,6 +336,7 @@ public class PenChargingService extends Service {
             mLastBatteryLevel = displayLevel;
             StylusState state = (displayLevel >= 100) ? StylusState.FULLY_CHARGED : StylusState.CHARGING;
             mPillController.showPopup(state, displayLevel, null);
+            hideChargedNotification();
 
             if (displayLevel >= 100) {
                 mHasShown100PercentPopup = true;
@@ -331,9 +368,19 @@ public class PenChargingService extends Service {
         }
     }
 
+    private boolean isNotificationEnabled() {
+        return mPreferences == null || mPreferences.getBoolean(PREF_STYLUS_CHARGING_NOTIF, true);
+    }
+
+    private int getAccentColor() {
+        boolean night = (getResources().getConfiguration().uiMode
+                & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
+        return getColor(night ? android.R.color.system_primary_dark
+                : android.R.color.system_primary_light);
+    }
+
     private void showNotification(int batteryLevel) {
-        boolean notifEnabled = mPreferences == null || mPreferences.getBoolean(PREF_STYLUS_CHARGING_NOTIF, true);
-        if (!notifEnabled || mNotificationManager == null) {
+        if (!isNotificationEnabled() || mNotificationManager == null) {
             hideNotification();
             return;
         }
@@ -351,10 +398,7 @@ public class PenChargingService extends Service {
             content = getString(R.string.pen_charging_notification_content_unknown);
         }
 
-        boolean night = (getResources().getConfiguration().uiMode
-                & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
-        int accent = getColor(night ? android.R.color.system_primary_dark
-                : android.R.color.system_primary_light);
+        int accent = getAccentColor();
 
         // Android 16 Live Update: progress-centric style with a status bar chip
         Notification.ProgressStyle style = new Notification.ProgressStyle()
@@ -386,6 +430,33 @@ public class PenChargingService extends Service {
     private void hideNotification() {
         if (mNotificationManager != null) {
             mNotificationManager.cancel(NOTIFICATION_ID);
+        }
+    }
+
+    /** One-shot notification posted when charging stops while the pen is still attached. */
+    private void showChargedNotification(int batteryLevel) {
+        if (!isNotificationEnabled() || mNotificationManager == null) return;
+
+        String content = batteryLevel >= 0
+                ? getString(R.string.pen_charged_notification_content, batteryLevel)
+                : getString(R.string.pen_charged_notification_content_unknown);
+
+        Notification notification = new Notification.Builder(this, CHANNEL_ID)
+                .setSmallIcon(R.drawable.ic_stylus_charging)
+                .setContentTitle(getString(R.string.pen_charged_notification_title))
+                .setContentText(content)
+                .setColor(getAccentColor())
+                .setOnlyAlertOnce(true)
+                .setCategory(Notification.CATEGORY_STATUS)
+                .setVisibility(Notification.VISIBILITY_PUBLIC)
+                .build();
+
+        mNotificationManager.notify(CHARGED_NOTIFICATION_ID, notification);
+    }
+
+    private void hideChargedNotification() {
+        if (mNotificationManager != null) {
+            mNotificationManager.cancel(CHARGED_NOTIFICATION_ID);
         }
     }
 

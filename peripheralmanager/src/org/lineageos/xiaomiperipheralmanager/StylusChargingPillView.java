@@ -94,11 +94,16 @@ public class StylusChargingPillView extends View {
             + "C8.48,10.94 10.42,7.54 13,3h1l-1,7h3.5c0.49,0 0.56,0.33 0.47,0.51l-0.07,0.15"
             + "C12.96,17.55 11,21 11,21z";
 
-    private static final float PILL_MAX_WIDTH_DP = 360f;
+    // The pill hugs its title; the max only caps the longest titles
+    private static final float PILL_MAX_WIDTH_DP = 324f;
     private static final float PILL_HEIGHT_DP = 76f;
     private static final float WINDOW_PADDING_DP = 20f;
     private static final float COOKIE_SIZE_DP = 56f;
     private static final float RING_SIZE_DP = 52f;
+    private static final float COOKIE_INSET_DP = 10f;
+    private static final float RING_INSET_DP = 12f;
+    private static final float TEXT_START_GAP_DP = 12f;
+    private static final float TEXT_END_GAP_DP = 10f;
     private static final float RING_STROKE_DP = 4f;
     private static final float RING_GAP_DP = 4f;
     private static final float RING_WAVE_AMPLITUDE_DP = 1.6f;
@@ -286,9 +291,7 @@ public class StylusChargingPillView extends View {
     private final Paint mIndicatorPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint mTrackPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint mTitlePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-    private final Paint mSubtitlePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint mPercentPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-    private final Paint mPercentSignPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
 
     public StylusChargingPillView(Context context) {
         this(context, null);
@@ -344,9 +347,7 @@ public class StylusChargingPillView extends View {
 
         Typeface typeface = loadTypeface();
         setupText(mTitlePaint, typeface, 16f, "'wght' 600, 'ROND' 100, 'opsz' 16");
-        setupText(mSubtitlePaint, typeface, 13f, "'wght' 450, 'ROND' 100, 'opsz' 13");
         setupText(mPercentPaint, typeface, 15f, "'wght' 750, 'ROND' 100, 'wdth' 90, 'opsz' 15");
-        setupText(mPercentSignPaint, typeface, 9.5f, "'wght' 700, 'ROND' 100, 'opsz' 9");
 
         loadColors();
         Palette initial = paletteFor(StylusPopupState.UNKNOWN, new Palette());
@@ -597,7 +598,14 @@ public class StylusChargingPillView extends View {
         mPalette.lerp(mPaletteFrom, mPaletteTo, clamp01(mColor.get()), mArgb);
 
         final float pad = dp(WINDOW_PADDING_DP);
-        final float fullWidth = width - 2f * pad;
+        final float maxWidth = width - 2f * pad;
+        final float swap = clamp01(mTextSwap.get());
+        float fullWidth = contentWidth(mModel, maxWidth);
+        if (swap < 1f && mPreviousModel != mModel) {
+            // Resize together with the text swap so in-place updates don't jump
+            float previousWidth = contentWidth(mPreviousModel, maxWidth);
+            fullWidth = previousWidth + (fullWidth - previousWidth) * swap;
+        }
         final float pillHeight = dp(PILL_HEIGHT_DP);
         final float reveal = clamp01(mReveal.get());
         final float expand = mExpand.get();
@@ -646,7 +654,7 @@ public class StylusChargingPillView extends View {
                 cx + fullWidth / 2f, cy + pillHeight / 2f);
         canvas.scale(scale, scale, cx, cy);
 
-        final float cookieCx = mContentRect.left + dp(10f) + dp(COOKIE_SIZE_DP) / 2f;
+        final float cookieCx = mContentRect.left + dp(COOKIE_INSET_DP) + dp(COOKIE_SIZE_DP) / 2f;
 
         // 2. Tonal glow behind the shape, breathing while charging
         drawGlow(canvas, cookieCx, cy, reveal, charging && animatorsEnabled, now);
@@ -656,10 +664,10 @@ public class StylusChargingPillView extends View {
         if (contentAlpha > 0.004f) {
             int layer = canvas.saveLayerAlpha(mContentRect, (int) (255 * contentAlpha));
             drawCookie(canvas, cookieCx, cy, now, animatorsEnabled);
-            float ringCx = mContentRect.right - dp(12f) - dp(RING_SIZE_DP) / 2f;
+            float ringCx = mContentRect.right - dp(RING_INSET_DP) - dp(RING_SIZE_DP) / 2f;
             drawRing(canvas, ringCx, cy, now, animatorsEnabled);
-            float textLeft = cookieCx + dp(COOKIE_SIZE_DP) / 2f + dp(14f);
-            float textRight = ringCx - dp(RING_SIZE_DP) / 2f - dp(12f);
+            float textLeft = cookieCx + dp(COOKIE_SIZE_DP) / 2f + dp(TEXT_START_GAP_DP);
+            float textRight = ringCx - dp(RING_SIZE_DP) / 2f - dp(TEXT_END_GAP_DP);
             drawText(canvas, textLeft, textRight, cy);
             canvas.restoreToCount(layer);
         }
@@ -822,17 +830,11 @@ public class StylusChargingPillView extends View {
         if (percent != null && percent >= 0 && indeterminate < 0.99f) {
             String number = String.valueOf(Math.round(progress * 100f));
             mPercentPaint.setColor(mOnSurfaceColor);
-            mPercentSignPaint.setColor(mOnSurfaceVariantColor);
-            int alpha = (int) (255 * (1f - indeterminate));
-            mPercentPaint.setAlpha(alpha);
-            mPercentSignPaint.setAlpha(alpha);
-            float numberWidth = mPercentPaint.measureText(number);
-            float signWidth = mPercentSignPaint.measureText("%");
-            float left = cx - (numberWidth + signWidth) / 2f;
+            mPercentPaint.setAlpha((int) (255 * (1f - indeterminate)));
+            float left = cx - mPercentPaint.measureText(number) / 2f;
             Paint.FontMetrics fm = mPercentPaint.getFontMetrics();
             float baseline = cy - (fm.ascent + fm.descent) / 2f;
             canvas.drawText(number, left, baseline, mPercentPaint);
-            canvas.drawText("%", left + numberWidth, baseline, mPercentSignPaint);
         }
     }
 
@@ -852,23 +854,21 @@ public class StylusChargingPillView extends View {
             float cy, float alpha) {
         if (alpha <= 0.01f) return;
         String title = ellipsize(model.title != null ? model.title : "", mTitlePaint, maxWidth);
-        String subtitle = ellipsize(model.subtitle != null ? model.subtitle : "",
-                mSubtitlePaint, maxWidth);
 
         Paint.FontMetrics tm = mTitlePaint.getFontMetrics();
-        Paint.FontMetrics sm = mSubtitlePaint.getFontMetrics();
-        float titleHeight = tm.descent - tm.ascent;
-        float subtitleHeight = sm.descent - sm.ascent;
-        float spacing = dp(2f);
-        float top = cy - (titleHeight + spacing + subtitleHeight) / 2f;
+        float baseline = cy - (tm.ascent + tm.descent) / 2f;
 
         mTitlePaint.setColor(mOnSurfaceColor);
         mTitlePaint.setAlpha((int) (255 * alpha));
-        canvas.drawText(title, left, top - tm.ascent, mTitlePaint);
+        canvas.drawText(title, left, baseline, mTitlePaint);
+    }
 
-        mSubtitlePaint.setColor(mOnSurfaceVariantColor);
-        mSubtitlePaint.setAlpha((int) (255 * alpha));
-        canvas.drawText(subtitle, left, top + titleHeight + spacing - sm.ascent, mSubtitlePaint);
+    /** Pill width needed to show the model's title without ellipsizing, capped at maxWidth. */
+    private float contentWidth(StylusPopupModel model, float maxWidth) {
+        float chrome = dp(COOKIE_INSET_DP) + dp(COOKIE_SIZE_DP) + dp(TEXT_START_GAP_DP)
+                + dp(TEXT_END_GAP_DP) + dp(RING_SIZE_DP) + dp(RING_INSET_DP);
+        String title = model.title != null ? model.title : "";
+        return Math.min(maxWidth, chrome + mTitlePaint.measureText(title));
     }
 
     // ---------------------------------------------------------------------------------------
