@@ -1,0 +1,21 @@
+diff --git a/media/libmedia/MediaCodecBuffer.cpp b/media/libmedia/MediaCodecBuffer.cpp
+index c35e0c6bc3..cca9dd625a 100644
+--- a/media/libmedia/MediaCodecBuffer.cpp
++++ b/media/libmedia/MediaCodecBuffer.cpp
+@@ -52,7 +52,15 @@ size_t MediaCodecBuffer::offset() const {
+ }
+ 
+ status_t MediaCodecBuffer::setRange(size_t offset, size_t size) {
+-    return mBuffer->setRangeWithStatus(offset, size);
++    // Secure (DRM-protected) buffers have no CPU-mapped data, so
++    // ABuffer::setRangeWithStatus() would reject them with NO_MEMORY.
++    // Only validate the range against the capacity here.
++    const size_t cap = mBuffer->capacity();
++    if (offset > cap || size > cap - offset) {
++        return BAD_VALUE;
++    }
++    mBuffer->setRange(offset, size);
++    return OK;
+ }
+ 
+ sp<AMessage> MediaCodecBuffer::meta() {

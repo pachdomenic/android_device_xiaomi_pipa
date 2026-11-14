@@ -1,0 +1,157 @@
+diff --git a/libs/WindowManager/Shell/res/drawable/ic_desktop_pill_dots.xml b/libs/WindowManager/Shell/res/drawable/ic_desktop_pill_dots.xml
+new file mode 100644
+index 000000000000..22a4bcf2185c
+--- /dev/null
++++ b/libs/WindowManager/Shell/res/drawable/ic_desktop_pill_dots.xml
+@@ -0,0 +1,24 @@
++<?xml version="1.0" encoding="utf-8"?>
++<!-- Three dots app handle. Tinted at runtime by AppHandleViewHolder. -->
++<vector xmlns:android="http://schemas.android.com/apk/res/android"
++    android:width="120dp"
++    android:height="30dp"
++    android:viewportWidth="120"
++    android:viewportHeight="30">
++
++    <path
++        android:fillColor="@android:color/white"
++        android:fillAlpha="0.5"
++        android:pathData="M45,15 m-4,0 a4,4 0 1,1 8,0 a4,4 0 1,1 -8,0" />
++
++    <path
++        android:fillColor="@android:color/white"
++        android:fillAlpha="0.5"
++        android:pathData="M60,15 m-4,0 a4,4 0 1,1 8,0 a4,4 0 1,1 -8,0" />
++
++    <path
++        android:fillColor="@android:color/white"
++        android:fillAlpha="0.5"
++        android:pathData="M75,15 m-4,0 a4,4 0 1,1 8,0 a4,4 0 1,1 -8,0" />
++
++</vector>
+diff --git a/libs/WindowManager/Shell/src/com/android/wm/shell/windowdecor/viewholder/AppHandleViewHolder.kt b/libs/WindowManager/Shell/src/com/android/wm/shell/windowdecor/viewholder/AppHandleViewHolder.kt
+index 8ffdee3b7605..0f29d57fe66e 100644
+--- a/libs/WindowManager/Shell/src/com/android/wm/shell/windowdecor/viewholder/AppHandleViewHolder.kt
++++ b/libs/WindowManager/Shell/src/com/android/wm/shell/windowdecor/viewholder/AppHandleViewHolder.kt
+@@ -20,10 +20,12 @@ import android.annotation.ColorInt
+ import android.app.ActivityManager.RunningTaskInfo
+ import android.content.Context
+ import android.content.res.ColorStateList
++import android.database.ContentObserver
+ import android.graphics.Point
+ import android.hardware.input.InputManager
+ import android.os.Bundle
+ import android.os.Handler
++import android.provider.Settings
+ import android.view.InsetsFlags
+ import android.view.LayoutInflater
+ import android.view.MotionEvent.ACTION_DOWN
+@@ -36,6 +38,7 @@ import android.view.accessibility.AccessibilityEvent
+ import android.view.accessibility.AccessibilityNodeInfo
+ import android.view.accessibility.AccessibilityNodeInfo.AccessibilityAction
+ import android.widget.ImageButton
++import android.widget.ImageView
+ import android.window.DesktopExperienceFlags
+ import android.window.DesktopModeFlags
+ import androidx.core.view.ViewCompat
+@@ -115,6 +118,7 @@ class AppHandleViewHolder(
+         !context.resources.getBoolean(R.bool.config_removeStatusBarInputLayer)
+ 
+     init {
++        PillStyleBinder.bind(captionHandle, handler)
+         captionView.setOnTouchListener(onCaptionTouchListener)
+         captionHandle.throttleFirstClicks(CLICK_DELAY) { v ->
+             // Clicking the App Handle.
+@@ -410,6 +414,93 @@ class AppHandleViewHolder(
+     }
+ 
+     /** Factory class for creating [AppHandleViewHolder] objects. */
++    /**
++     * Applies the user selected app handle style (Settings.Global desktop_mode_pill_style) to the
++     * caption handle and keeps it in sync while the handle is attached to a window.
++     *
++     * Lives on the view (not on the decoration) because both the legacy
++     * DesktopModeWindowDecoration and the WindowDecoration2 AppHandleController create this view
++     * holder, and the latter never calls [close].
++     */
++    private class PillStyleBinder(private val handle: ImageButton, handler: Handler) :
++        ContentObserver(handler), View.OnAttachStateChangeListener {
++        private var registered = false
++
++        override fun onChange(selfChange: Boolean) = applyStyle()
++
++        override fun onViewAttachedToWindow(v: View) {
++            register()
++            applyStyle()
++        }
++
++        override fun onViewDetachedFromWindow(v: View) = unregister()
++
++        private fun register() {
++            if (registered) return
++            handle.context.contentResolver.registerContentObserver(
++                Settings.Global.getUriFor(DESKTOP_MODE_PILL_STYLE),
++                /* notifyForDescendants= */ false,
++                this,
++            )
++            registered = true
++        }
++
++        private fun unregister() {
++            if (!registered) return
++            handle.context.contentResolver.unregisterContentObserver(this)
++            registered = false
++        }
++
++        fun applyStyle() {
++            val style =
++                Settings.Global.getInt(
++                    handle.context.contentResolver,
++                    DESKTOP_MODE_PILL_STYLE,
++                    PILL_STYLE_HIDDEN,
++                )
++            val res = handle.resources
++            // HandleImageButton animates the horizontal padding back to this value after
++            // hover/press, so every style must use it as its resting horizontal padding.
++            val padH =
++                res.getDimensionPixelSize(
++                    R.dimen.desktop_mode_fullscreen_decor_caption_horizontal_padding_default
++                )
++            if (style == PILL_STYLE_DOTS) {
++                handle.setImageResource(R.drawable.ic_desktop_pill_dots)
++                handle.setPadding(padH, 0, padH, 0)
++                handle.scaleType = ImageView.ScaleType.FIT_CENTER
++            } else {
++                val padV = Math.round(16 * res.displayMetrics.density)
++                handle.setImageResource(R.drawable.decor_handle_dark)
++                handle.setPadding(padH, padV, padH, padV)
++                handle.scaleType = ImageView.ScaleType.FIT_XY
++            }
++            // Hide only the drawable: the handle stays touchable and View#setAlpha() would be
++            // overridden by AppHandleAnimator's fade in/out.
++            handle.imageAlpha = if (style == PILL_STYLE_HIDDEN) 0 else 255
++        }
++
++        companion object {
++            private const val DESKTOP_MODE_PILL_STYLE = "desktop_mode_pill_style"
++            private const val PILL_STYLE_HIDDEN = 0
++            private const val PILL_STYLE_DOTS = 2
++
++            /** Binds once per handle view; view holders may be recreated for the same view. */
++            fun bind(handle: ImageButton, handler: Handler) {
++                val existing = handle.getTag(R.id.caption_handle) as? PillStyleBinder
++                if (existing != null) {
++                    existing.applyStyle()
++                    return
++                }
++                val binder = PillStyleBinder(handle, handler)
++                handle.setTag(R.id.caption_handle, binder)
++                handle.addOnAttachStateChangeListener(binder)
++                if (handle.isAttachedToWindow) binder.register()
++                binder.applyStyle()
++            }
++        }
++    }
++
+     class Factory {
+         /**
+          * Create a [AppHandleViewHolder] object to handle caption view and status bar input layer
